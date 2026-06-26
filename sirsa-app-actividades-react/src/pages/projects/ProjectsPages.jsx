@@ -11,7 +11,7 @@ import {
   Card, Button, Input, Select, Textarea, StatusBadge, Progress,
   Badge, Avatar, Modal, Spinner, Empty
 } from '../../components/ui'
-import { formatDate, daysUntil, AREAS, MANAGEMENT_ROLES, cn } from '../../lib/utils'
+import { formatDate, daysUntil, AREAS, MANAGEMENT_ROLES, COMPLEXITY_LEVELS, cn } from '../../lib/utils'
 import { useAuth, useSocket } from '../../context/AppContext'
 import toast from 'react-hot-toast'
 import { ClipboardList } from 'lucide-react'
@@ -47,7 +47,7 @@ export const ProjectsPage = () => {
     : projects
 
   return (
-    <div className="space-y-4 animate-fade-in min-h-[90vh]">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
           <h1 className="text-xl font-semibold text-charcoal">Proyectos</h1>
@@ -523,144 +523,59 @@ const ProjectChat = ({ projectId, user, socket }) => {
   const userId = user._id || user.userId
 
   return (
-   <Card className="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm">
-  <Card.Header className="border-b border-emerald-100 bg-emerald-50/70 px-5 py-4">
-    <Card.Title className="flex items-center gap-3 text-lg font-semibold text-slate-900">
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-        <MessageSquare size={20} />
-      </div>
-      Chat del proyecto
-    </Card.Title>
-  </Card.Header>
-
-  <div className="flex flex-col bg-slate-50/40" style={{ height: '520px' }}>
-    <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 scrollbar-thin">
-      <div className="flex items-center gap-4">
-        <div className="h-px flex-1 bg-slate-200" />
-        <span className="rounded-full bg-slate-100 px-4 py-1 text-xs font-medium text-slate-500">
-          Hoy
-        </span>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
-
-      {hasMore && (
-        <button
-          onClick={() => load(messages[0]?._id)}
-          className="mx-auto flex items-center justify-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
-        >
-          Cargar mensajes anteriores
-        </button>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <Spinner />
+    <Card>
+      <Card.Header>
+        <Card.Title className="flex items-center gap-1.5">
+          <MessageSquare size={14} /> Chat del proyecto
+        </Card.Title>
+      </Card.Header>
+      <div className="flex flex-col" style={{ height: '420px' }}>
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
+          {hasMore && (
+            <button onClick={() => load(messages[0]?._id)}
+              className="w-full text-xs text-navy hover:underline py-1">
+              Cargar mensajes anteriores
+            </button>
+          )}
+          {loading
+            ? <div className="flex justify-center py-8"><Spinner /></div>
+            : messages.length === 0
+              ? <Empty icon={<MessageSquare size={28} />} title="Sin mensajes aún" description="Sé el primero en escribir" />
+              : messages.map(m => {
+                const isMe = m.user_id?.toString() === userId?.toString()
+                return (
+                  <div key={m._id} className={cn('flex gap-2', isMe && 'flex-row-reverse')}>
+                    <Avatar name={m.user?.name} size="sm" className="flex-shrink-0 mt-0.5" />
+                    <div className={cn('max-w-[75%]', isMe && 'items-end flex flex-col')}>
+                      <div className="flex items-baseline gap-1.5 mb-0.5">
+                        {!isMe && <span className="text-xs font-medium text-navy">{m.user?.name}</span>}
+                        <span className="text-[10px] text-charcoal-muted">
+                          {new Date(m.createdAt).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}
+                        </span>
+                        {m.edited && <span className="text-[10px] text-charcoal-muted">(editado)</span>}
+                      </div>
+                      <div className={cn('px-3 py-1.5 rounded-lg text-sm',
+                        m.deleted ? 'text-charcoal-muted italic text-xs bg-silver' :
+                        isMe ? 'bg-navy text-white' : 'bg-silver text-charcoal')}>
+                        {m.deleted ? 'Mensaje eliminado' : m.message}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+          }
+          <div ref={bottomRef} />
         </div>
-      ) : messages.length === 0 ? (
-        <Empty
-          icon={<MessageSquare size={28} />}
-          title="Sin mensajes aún"
-          description="Sé el primero en escribir"
-        />
-      ) : (
-        messages.map(m => {
-          const isMe = m.user_id?.toString() === userId?.toString()
-
-          return (
-            <div
-              key={m._id}
-              className={cn(
-                'flex items-end gap-3',
-                isMe ? 'justify-end' : 'justify-start'
-              )}
-            >
-              {!isMe && (
-                <Avatar
-                  name={m.user?.name}
-                  size="sm"
-                  className="mb-1 flex-shrink-0 ring-2 ring-white shadow-sm"
-                />
-              )}
-
-              <div
-                className={cn(
-                  'flex max-w-[78%] flex-col',
-                  isMe ? 'items-end' : 'items-start'
-                )}
-              >
-                <div className="mb-1 flex items-center gap-2">
-                  {!isMe && (
-                    <span className="text-xs font-semibold text-slate-900">
-                      {m.user?.name}
-                    </span>
-                  )}
-
-                  <span className="text-[11px] text-slate-400">
-                    {new Date(m.createdAt).toLocaleTimeString('es-MX', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
-
-                  {m.edited && (
-                    <span className="text-[10px] text-slate-400">
-                      editado
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  className={cn(
-                    'rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm',
-                    m.deleted
-                      ? 'bg-slate-100 text-slate-400 italic'
-                      : isMe
-                        ? 'rounded-br-md bg-indigo-600 text-white shadow-indigo-100'
-                        : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'
-                  )}
-                >
-                  {m.deleted ? 'Mensaje eliminado' : m.message}
-                </div>
-              </div>
-
-              {isMe && (
-                <Avatar
-                  name={m.user?.name}
-                  size="sm"
-                  className="mb-1 flex-shrink-0 ring-2 ring-white shadow-sm"
-                />
-              )}
-            </div>
-          )
-        })
-      )}
-
-      <div ref={bottomRef} />
-    </div>
-
-    <form
-      onSubmit={send}
-      className="border-t border-slate-200 bg-white px-4 py-3"
-    >
-      <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100">
-        <input
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Escribe un mensaje..."
-          className="flex-1 bg-transparent px-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
-        />
-
-        <Button
-          type="submit"
-          size="icon"
-          loading={sending}
-          className="h-10 w-10 rounded-full bg-indigo-600 text-white hover:bg-indigo-700"
-          icon={!sending && <Send size={16} />}
-        />
+        <form onSubmit={send} className="border-t border-silver-border px-3 py-2 flex items-center gap-2">
+          <input value={text} onChange={e => setText(e.target.value)}
+            placeholder="Escribe un mensaje…"
+            className="flex-1 text-sm px-3 py-1.5 rounded-full border border-silver-border bg-white
+              focus:outline-none focus:border-navy" />
+          <Button type="submit" variant="navy" size="icon" loading={sending}
+            icon={!sending && <Send size={14} />} />
+        </form>
       </div>
-    </form>
-  </div>
-</Card>
+    </Card>
   )
 }
 
@@ -832,7 +747,7 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
   const [allUsers, setAllUsers] = useState([])
   const [form, setForm] = useState({
     name:'', description:'', priority:'media',
-    target_date:'', assignees:[], weight: 1
+    complexity:'basica', target_date:'', assignees:[]
   })
   const [saving, setSaving] = useState(false)
 
@@ -853,7 +768,6 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    // Cambio 4: validar al menos un asignado
     if (form.assignees.length === 0) {
       toast.error('Debes asignar la actividad a al menos un usuario'); return
     }
@@ -869,7 +783,7 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
     <Modal open title="Nueva actividad" onClose={onClose} size="lg"
       footer={<>
         <Button variant="outline" onClick={onClose}>Cancelar</Button>
-        <Button variant="gold" loading={saving} onClick={handleSubmit}>Crear actividad</Button>
+        <Button variant="primary" loading={saving} onClick={handleSubmit}>Crear actividad</Button>
       </>}>
       <form onSubmit={handleSubmit} className="space-y-3">
         <Input label="Nombre de la actividad *" placeholder="Ej. Calibración detector"
@@ -879,33 +793,43 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
         <div className="grid grid-cols-3 gap-3">
           <Select label="Prioridad" value={form.priority}
             onChange={e => setForm(f => ({...f, priority: e.target.value}))}
-            options={[{value:'baja',label:'Baja'},{value:'media',label:'Media'},
-              {value:'alta',label:'Alta'},{value:'urgente',label:'Urgente'}]} />
+            options={[
+              {value:'baja',    label:'Baja'},
+              {value:'media',   label:'Media'},
+              {value:'alta',    label:'Alta'},
+              {value:'urgente', label:'Urgente'},
+            ]} />
+          <Select label="Complejidad" value={form.complexity}
+            onChange={e => setForm(f => ({...f, complexity: e.target.value}))}
+            options={Object.entries(COMPLEXITY_LEVELS).map(([v, m]) => ({
+              value: v,
+              label: `${m.label} (x${m.weight})`
+            }))} />
           <Input label="Fecha objetivo" type="date" value={form.target_date}
             onChange={e => setForm(f => ({...f, target_date: e.target.value}))} />
-          <Input label="Ponderación (1-10)" type="number" min="1" max="10"
-            value={form.weight} onChange={e => setForm(f => ({...f, weight: Number(e.target.value)}))} />
         </div>
 
-        {/* Cambio 4: selección obligatoria de asignados */}
         <div>
-          <label className="text-xs font-medium text-charcoal-light block mb-1.5">
-            Asignar a * <span className="text-charcoal-muted font-normal">(mínimo 1 usuario)</span>
+          <label className="text-xs font-medium text-[#626261] block mb-1.5">
+            Asignar a * <span className="text-[#A0A09F] font-normal">(mínimo 1 usuario)</span>
           </label>
           {allUsers.length === 0
             ? <div className="flex justify-center py-3"><Spinner /></div>
             : (
-              <div className="grid grid-cols-2 gap-1 max-h-48 overflow-y-auto scrollbar-thin border border-silver-border rounded p-2">
+              <div className="grid grid-cols-2 gap-1 max-h-48 overflow-y-auto scrollbar-thin
+                border border-[#D9D9D9] rounded-lg p-2 bg-[#FBFBFB]">
                 {allUsers.map(u => {
                   const selected = form.assignees.includes(u._id)
                   return (
                     <button key={u._id} type="button" onClick={() => toggleAssignee(u._id)}
                       className={cn(
-                        'flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors',
-                        selected ? 'bg-navy text-white' : 'hover:bg-silver text-charcoal'
+                        'flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm transition-colors',
+                        selected
+                          ? 'bg-[#1D1C19] text-white'
+                          : 'hover:bg-[rgba(248,205,36,0.08)] text-[#1D1C19]'
                       )}>
                       <Avatar name={u.name} size="xs" />
-                      <span className="truncate">{u.name}</span>
+                      <span className="truncate text-xs">{u.name}</span>
                     </button>
                   )
                 })}
@@ -913,7 +837,9 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
             )
           }
           {form.assignees.length > 0 && (
-            <p className="text-xs text-green-600 mt-1">{form.assignees.length} usuario(s) seleccionado(s)</p>
+            <p className="text-xs text-[#2BA84A] mt-1">
+              {form.assignees.length} usuario(s) seleccionado(s)
+            </p>
           )}
         </div>
       </form>
@@ -959,7 +885,7 @@ const ProjectFormModal = ({ onClose, onSaved }) => {
   const fc = (k, v) => setForm(p => ({ ...p, client: { ...p.client, [k]: v } }))
 
   return (
-    <Modal open title="Nuevo proyecto (Orden de Servicio)" onClose={onClose} size="lg" className="z-200"
+    <Modal open title="Nuevo proyecto (Orden de Servicio)" onClose={onClose} size="lg"
       footer={<>
         <Button variant="outline" onClick={onClose}>Cancelar</Button>
         <Button variant="gold" loading={saving} onClick={handleSubmit}>Crear proyecto</Button>
