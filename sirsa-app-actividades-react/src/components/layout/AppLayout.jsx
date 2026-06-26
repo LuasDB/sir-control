@@ -162,7 +162,7 @@ const AppLayout = () => {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar onToggle={() => setCollapsed(v => !v)} collapsed={collapsed} />
-        <main className="flex-1 overflow-y-auto scrollbar-thin">
+        <main className="flex-1 overflow-y-auto scrollbar-thin ">
           <div className="max-w-[1400px] mx-auto p-5 lg:p-6">
             <Outlet />
           </div>

@@ -53,7 +53,7 @@ export const UsersPage = () => {
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in min-h-[90vh]">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-charcoal">Usuarios</h1>

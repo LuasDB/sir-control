@@ -47,7 +47,7 @@ export const ProjectsPage = () => {
     : projects
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in min-h-[90vh]">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
           <h1 className="text-xl font-semibold text-charcoal">Proyectos</h1>

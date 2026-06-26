@@ -274,12 +274,10 @@ export const Modal = ({ open, onClose, title, children, size = 'md', footer }) =
         bg-black/40
         backdrop-blur-sm
         p-4 max-h-[calc(100dvh-2rem)]
-        
-       
     "
 >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-[#1D1C19]/40 backdrop-blur-[2px] " />
+      <div className="absolute  inset-0 bg-[#1D1C19]/40 backdrop-blur-[2px]" />
       {/* Panel */}
      <div
   className={cn(
