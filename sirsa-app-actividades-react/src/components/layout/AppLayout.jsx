@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, ClipboardList, Users, Building2,
-  Bell, LogOut, RadioTower, ChevronDown, Menu, X, HelpCircle,
+  Bell, LogOut, BotIcon, ChevronDown, Menu, X, HelpCircle,
   CalendarDays, BarChart2
 } from 'lucide-react'
 import { useAuth, useNotifications } from '../../context/AppContext'
@@ -36,11 +36,11 @@ const Sidebar = ({ collapsed }) => {
         collapsed ? 'justify-center px-0' : 'gap-3 px-4'
       )}>
         <div className="w-8 h-8 rounded-lg bg-[#1D1C19] flex items-center justify-center flex-shrink-0">
-          <RadioTower size={15} className="text-[#F8CD24]" />
+          <BotIcon size={15} className="text-[#F8CD24]" />
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <div className="text-sm font-bold text-[#1D1C19] leading-tight">SIR-Track</div>
+            <div className="text-sm font-bold text-[#1D1C19] leading-tight">SIR-Flow</div>
             <div className="text-2xs text-[#A0A09F] leading-tight">Dept. Técnico</div>
           </div>
         )}

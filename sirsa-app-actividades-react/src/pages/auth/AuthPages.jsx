@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { RadioTower, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { BotIcon, Mail, Lock, Eye, EyeOff, ArrowLeft, } from 'lucide-react'
 import { useAuth } from '../../context/AppContext'
 import { Button, Input } from '../../components/ui'
 import { authAPI } from '../../services/api'
@@ -45,9 +45,9 @@ export const LoginPage = () => {
       {/* Logo */}
       <div className="flex flex-col items-center mb-8">
         <div className="w-14 h-14 rounded-2xl bg-[#F8CD24] flex items-center justify-center mb-4 shadow-card">
-          <RadioTower size={26} className="text-[#1D1C19]" />
+          <BotIcon size={26} className="text-[#1D1C19]" />
         </div>
-        <h1 className="text-xl font-bold text-white">SIR-Track</h1>
+        <h1 className="text-xl font-bold text-white">SIR-Flow</h1>
         <p className="text-sm text-[#626261] mt-1">
           Servicios Integrales para la Radiación
         </p>
@@ -114,7 +114,7 @@ export const LoginPage = () => {
       </div>
 
       <p className="text-center text-2xs text-[#626261] mt-6">
-        © 2026 Servicios Integrales para la Radiación S.A. de C.V.
+        Made with 💛 by Saul De la Fuente (LuasDB)
       </p>
     </AuthShell>
   )
