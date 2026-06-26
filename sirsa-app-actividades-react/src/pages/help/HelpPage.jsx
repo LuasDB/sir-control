@@ -168,7 +168,7 @@ const HelpPage = () => (
         <RadioTower size={18} className="text-gold" />
       </div>
       <div>
-        <h1 className="text-xl font-semibold text-charcoal">Guía de usuario — SIR-Track</h1>
+        <h1 className="text-xl font-semibold text-charcoal">Guía de usuario — SIR-Flow</h1>
         <p className="text-xs text-charcoal-muted mt-0.5">
           Plataforma de seguimiento de proyectos del departamento técnico
         </p>
@@ -198,7 +198,7 @@ const HelpPage = () => (
     <Card>
       <Card.Body>
         <p className="text-xs text-charcoal-muted text-center">
-          SIR-Track v1.0 · Servicios Integrales para la Radiación S.A. de C.V. · Soporte TI interno
+          SIR-Flow v1.0 · Made with 💛 by Saul De la fuente
         </p>
       </Card.Body>
     </Card>
