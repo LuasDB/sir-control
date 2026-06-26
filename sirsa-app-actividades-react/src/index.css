@@ -1,0 +1,176 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Variables CSS globales SIRSA ─────────────────────────────────────────── */
+:root {
+  --c-black     : #1D1C19;
+  --c-yellow    : #F8CD24;
+  --c-yellow-h  : #E6BE1F;
+  --c-yellow-d  : #B08629;
+  --c-gray      : #626261;
+  --c-gray-l    : #A0A09F;
+  --c-white     : #FBFBFB;
+  --c-bg        : #F5F5F5;
+  --c-surface   : #FFFFFF;
+  --c-border    : #D9D9D9;
+  --c-green     : #2BA84A;
+  --c-blue      : #2E75B6;
+  --c-red       : #E63946;
+
+  --radius-sm   : 6px;
+  --radius-md   : 8px;
+  --radius-lg   : 12px;
+  --radius-xl   : 16px;
+
+  --shadow-card : 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-modal: 0 8px 32px rgba(0,0,0,0.16);
+  --shadow-btn  : 0 1px 3px rgba(0,0,0,0.12);
+}
+
+/* ── Reset base ───────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    -webkit-font-smoothing : antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering         : optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--c-bg);
+    color           : var(--c-black);
+    font-family     : 'Inter', system-ui, sans-serif;
+    font-size       : 14px;
+    line-height     : 1.5;
+  }
+
+  /* Focus visible con amarillo SIRSA */
+  :focus-visible {
+    outline       : 2px solid var(--c-yellow);
+    outline-offset: 2px;
+    border-radius : var(--radius-sm);
+  }
+
+  /* Scrollbar delgada */
+  ::-webkit-scrollbar        { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background: var(--c-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--c-gray-l); }
+}
+
+/* ── Componentes SIRSA ───────────────────────────────────────────────────── */
+@layer components {
+
+  /* Status badges */
+  .badge-pendiente   { @apply bg-gray-100 text-gray-500; }
+  .badge-en_proceso  { color: var(--c-blue);  background: rgba(46,117,182,0.10); }
+  .badge-retrasado   { color: var(--c-yellow-d); background: rgba(176,134,41,0.12); }
+  .badge-en_revision { @apply bg-violet-50 text-violet-600; }
+  .badge-cerrado     { color: var(--c-green); background: rgba(43,168,74,0.10); }
+  .badge-cancelado   { color: var(--c-red);   background: rgba(230,57,70,0.10); }
+
+  /* Priority dots */
+  .dot-baja    { background: var(--c-gray-l); }
+  .dot-media   { background: var(--c-blue); }
+  .dot-alta    { background: var(--c-yellow-d); }
+  .dot-urgente { background: var(--c-red); }
+
+  /* Nav item */
+  .nav-item {
+    display        : flex;
+    align-items    : center;
+    gap            : 10px;
+    padding        : 8px 10px;
+    border-radius  : var(--radius-md);
+    color          : var(--c-gray);
+    font-size      : 13px;
+    font-weight    : 400;
+    cursor         : pointer;
+    transition     : all 150ms;
+    white-space    : nowrap;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: rgba(248,205,36,0.08); color: var(--c-black); }
+  .nav-item.active {
+    background : rgba(248,205,36,0.12);
+    color      : var(--c-black);
+    font-weight: 600;
+    border-left: 2.5px solid var(--c-yellow);
+  }
+
+  /* Table header */
+  .table-header {
+    background: var(--c-black);
+    color     : var(--c-white);
+    font-size : 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  /* Table row hover */
+  .table-row-hover:hover { background: rgba(248,205,36,0.06); }
+}
+
+/* ── Utilidades SIRSA ─────────────────────────────────────────────────────── */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.18s ease-out both;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.2s ease-out both;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Input SIRSA */
+  .input-sirsa {
+    width         : 100%;
+    min-height    : 44px;
+    padding       : 10px 12px;
+    border        : 1.5px solid var(--c-border);
+    border-radius : var(--radius-md);
+    background    : var(--c-surface);
+    color         : var(--c-black);
+    font-size     : 13px;
+    transition    : border-color 150ms, box-shadow 150ms;
+    outline       : none;
+  }
+  .input-sirsa::placeholder { color: var(--c-gray-l); }
+  .input-sirsa:focus {
+    border-color: var(--c-yellow);
+    box-shadow  : 0 0 0 3px rgba(248,205,36,0.20);
+  }
+  .input-sirsa:disabled {
+    background: var(--c-bg);
+    cursor    : not-allowed;
+    opacity   : .6;
+  }
+  .input-sirsa.error {
+    border-color: var(--c-red);
+    box-shadow  : 0 0 0 3px rgba(230,57,70,0.15);
+  }
+
+  /* Card SIRSA */
+  .card-sirsa {
+    background   : var(--c-surface);
+    border-radius: var(--radius-lg);
+    box-shadow   : var(--shadow-card);
+    border       : 1px solid rgba(0,0,0,0.06);
+  }
+
+  /* Scrollbar delgada (clase) */
+  .scrollbar-thin::-webkit-scrollbar       { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 4px; }
+}
