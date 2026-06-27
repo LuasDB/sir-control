@@ -189,7 +189,7 @@ const AVATAR_BG = [
   'bg-[#1D1C19]','bg-[#2E75B6]','bg-[#2BA84A]',
   'bg-[#B08629]','bg-[#626261]','bg-[#E63946]',
 ]
-export const Avatar = ({ name = '', size = 'md', className }) => {
+export const Avatar = ({ name = '', size = 'md', className, src }) => {
   const idx   = (name.charCodeAt(0) || 0) % AVATAR_BG.length
   const sizes = {
     xs: 'w-6 h-6 text-[9px]',
@@ -197,6 +197,23 @@ export const Avatar = ({ name = '', size = 'md', className }) => {
     md: 'w-8 h-8 text-xs',
     lg: 'w-10 h-10 text-sm',
     xl: 'w-12 h-12 text-base',
+  }
+  // Si hay URL de foto real, mostrarla; si no, el avatar de iniciales
+  if (src) {
+    const baseUrl = import.meta.env.VITE_API_URL?.replace('/api/v1','') || 'http://192.168.1.73:3000'
+    const imgSrc  = src.startsWith('http') ? src : `${baseUrl}${src}`
+    return (
+      <img
+        src={imgSrc}
+        alt={name}
+        className={cn('rounded-full object-cover flex-shrink-0', sizes[size], className)}
+        onError={e => {
+          // Si la imagen falla, mostrar iniciales como fallback
+          e.target.style.display = 'none'
+          e.target.parentNode?.classList?.add('show-initials')
+        }}
+      />
+    )
   }
   return (
     <span className={cn(
@@ -262,31 +279,17 @@ export const Modal = ({ open, onClose, title, children, size = 'md', footer }) =
   if (!open) return null
 
   return (
-    <div
-    ref={overlayRef}
-    onClick={e => e.target === overlayRef.current && onClose?.()}
-    className="
-        fixed
-        inset-0
-        z-[1000]
-        flex
-        justify-center
-        bg-black/40
-        backdrop-blur-sm
-        p-4 max-h-[calc(100dvh-2rem)]
-    "
->
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center pt-[72px] sm:pt-4 px-4 pb-4"
+      ref={overlayRef}
+      onClick={e => e.target === overlayRef.current && onClose?.()}>
       {/* Overlay */}
-      <div className="absolute  inset-0 bg-[#1D1C19]/40 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-[#1D1C19]/40 backdrop-blur-[2px]" />
       {/* Panel */}
-     <div
-  className={cn(
-    "relative w-full overflow-hidden rounded-2xl bg-white shadow-2xl",
-    "flex flex-col",
-    "animate-fade-in",
-    sizes[size]
-  )}
->
+      <div className={cn(
+        'relative bg-white rounded-xl shadow-modal w-full animate-fade-in flex flex-col',
+        'max-h-[calc(100vh-80px)] sm:max-h-[90vh]',
+        sizes[size]
+      )}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#F0F0F0] flex-shrink-0">
           <h2 className="text-base font-semibold text-[#1D1C19]">{title}</h2>
@@ -295,12 +298,11 @@ export const Modal = ({ open, onClose, title, children, size = 'md', footer }) =
               hover:bg-[#F5F5F5] hover:text-[#1D1C19] transition-colors">
             <X size={15} />
           </button>
-          
         </div>
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-thin h-screen">
+        <div className="px-6 py-5 overflow-y-auto scrollbar-thin flex-1">
           {children}
-          </div>
+        </div>
         {/* Footer */}
         {footer && (
           <div className="px-6 py-4 border-t border-[#F0F0F0] flex items-center justify-end gap-3 flex-shrink-0">

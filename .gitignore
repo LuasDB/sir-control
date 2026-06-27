@@ -249,3 +249,6 @@ node_modules
 dist
 build
 .DS_Store
+
+# Ignorar la carpeta de acchivos para no sobreescribirla
+/sirsa-api-actividades-node/uploads

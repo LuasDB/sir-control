@@ -74,7 +74,7 @@ class ProjectChat {
       // Devolver con la info del usuario para emitir por socket inmediatamente
       const user = await db.collection('users').findOne(
         { _id: new ObjectId(userId) },
-        { projection: { name: 1, role: 1 } }
+        { projection: { name: 1, role: 1,avatar_url:1 } }
       )
 
       return {
@@ -122,7 +122,7 @@ class ProjectChat {
             from     : 'users',
             localField: 'user_id',
             foreignField: '_id',
-            pipeline : [{ $project: { name: 1, role: 1 } }],
+            pipeline : [{ $project: { name: 1, role: 1,avatar_url:1 } }],
             as       : 'user'
           }
         },

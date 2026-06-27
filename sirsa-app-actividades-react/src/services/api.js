@@ -29,11 +29,18 @@ export const authAPI = {
   resetPassword : (data) => api.post('/auth/reset-password', data),
 }
 export const usersAPI = {
-  getAll: (params)  => api.get('/users', { params }),
-  getOne: (id)      => api.get(`/users/${id}`),
-  create: (data)    => api.post('/users', data),
-  update: (id, d)   => api.patch(`/users/${id}`, d),
-  remove: (id)      => api.delete(`/users/${id}`),
+  getAll      : (params)  => api.get('/users', { params }),
+  getOne      : (id)      => api.get(`/users/${id}`),
+  create      : (data)    => api.post('/users', data),
+  update      : (id, d)   => api.patch(`/users/${id}`, d),
+  remove      : (id)      => api.delete(`/users/${id}`),
+  // Avatar
+  uploadAvatar: (id, form) => api.patch(`/users/${id}/avatar`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteAvatar    : (id)  => api.delete(`/users/${id}/avatar`),
+  // Configuración de cuenta propia
+  updateMySettings: (data) => api.patch('/users/me/settings', data),
 }
 export const departmentsAPI = {
   getAll    : (params)   => api.get('/departments', { params }),

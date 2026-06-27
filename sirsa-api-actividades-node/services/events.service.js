@@ -129,7 +129,7 @@ class Events {
             from     : 'users',
             localField: 'participants',
             foreignField: '_id',
-            pipeline : [{ $project: { name: 1, role: 1 } }],
+            pipeline : [{ $project: { name: 1, role: 1,avatar_url:1 } }],
             as       : 'participants_info'
           }
         },
@@ -138,7 +138,7 @@ class Events {
             from     : 'users',
             localField: 'created_by',
             foreignField: '_id',
-            pipeline : [{ $project: { name: 1 } }],
+            pipeline : [{ $project: { name: 1 ,avatar_url:1} }],
             as       : 'creator'
           }
         },
@@ -175,7 +175,7 @@ class Events {
             from     : 'users',
             localField: 'participants',
             foreignField: '_id',
-            pipeline : [{ $project: { name: 1, role: 1, email: 1 } }],
+            pipeline : [{ $project: { name: 1, role: 1, email: 1,avatar_url:1 } }],
             as       : 'participants_info'
           }
         },
@@ -184,7 +184,7 @@ class Events {
             from     : 'users',
             localField: 'created_by',
             foreignField: '_id',
-            pipeline : [{ $project: { name: 1 } }],
+            pipeline : [{ $project: { name: 1,avatar_url:1 } }],
             as       : 'creator'
           }
         },

@@ -109,15 +109,15 @@ const DashboardPage = () => {
         <KpiCard icon={ClipboardList} label="Actividades totales"
           value={totalActivities}
           sub={`${as.en_proceso || 0} en curso`}
-          color="blue" />
+          color="blue" accent />
         <KpiCard icon={AlertTriangle} label="Retrasadas"
           value={delayed}
           sub={delayed > 0 ? 'Requieren atención' : 'Sin retrasos ✓'}
-          color={delayed > 0 ? 'red' : 'green'} />
+          color={delayed > 0 ? 'red' : 'green'} accent/>
         <KpiCard icon={CheckCircle2}  label="Actividades cerradas"
           value={closed}
           sub="Total acumulado"
-          color="green" />
+          color="green" accent/>
       </div>
 
       {/* Fila media */}
@@ -238,7 +238,7 @@ const DashboardPage = () => {
                 const barC = pct >= 80 ? '#E63946' : pct >= 50 ? '#F8CD24' : '#2BA84A'
                 return (
                   <div key={w._id} className="px-5 py-3 flex items-center gap-3">
-                    <Avatar name={w.user?.name} size="sm" />
+                    <Avatar name={w.user?.name} size="sm" src={w.user?.avatar_url} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#1D1C19] truncate">{w.user?.name}</p>
                       <div className="flex items-center gap-2 mt-1">

@@ -1,6 +1,6 @@
 // ─── Páginas: Usuarios, Departamentos y Notificaciones ───────────────────────
 import { useState, useEffect, useCallback } from 'react'
-import { Users, Building2, Plus, Pencil, Trash2, Bell, BellOff, ChevronRight, Shield } from 'lucide-react'
+import { Users, Building2, Plus, Pencil, Trash2, Bell, BellOff, ChevronRight, Shield, Camera } from 'lucide-react'
 import { usersAPI, departmentsAPI, notificationsAPI } from '../../services/api'
 import { Card, Button, Input, Select, Badge, Avatar, Modal, Spinner, Empty, StatusBadge } from '../../components/ui'
 import { ROLE_LABELS, MANAGEMENT_ROLES, cn, formatRelative, formatDate, AREAS } from '../../lib/utils'
@@ -53,7 +53,7 @@ export const UsersPage = () => {
   }
 
   return (
-    <div className="space-y-4 animate-fade-in min-h-[90vh]">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-charcoal">Usuarios</h1>
@@ -94,7 +94,7 @@ export const UsersPage = () => {
                 ? <Empty icon={<Users size={36} />} title="Sin usuarios" />
                 : filtered.map(u => (
                   <div key={u._id} className="px-4 py-3 flex items-center gap-3">
-                    <Avatar name={u.name} size="md" />
+                    <Avatar name={u.name} size="md" src={u.avatar_url} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-charcoal">{u.name}</p>
@@ -134,14 +134,16 @@ export const UsersPage = () => {
 
 // ── User Form Modal ───────────────────────────────────────────────────────────
 const UserFormModal = ({ user: editUser, onClose, onSaved }) => {
-  const { user } = useAuth()
-  const isEdit   = !!editUser
+  const { user }   = useAuth()
+  const isEdit     = !!editUser
   const [departments, setDepts] = useState([])
+  const [avatarFile, setAvatarFile]   = useState(null)
+  const [avatarPreview, setPreview]   = useState(editUser?.avatar_url || null)
   const [form, setForm] = useState({
-    name       : editUser?.name        || '',
-    email      : editUser?.email       || '',
-    role       : editUser?.role        || 'auxiliar',
-    area       : editUser?.area        || '',
+    name       : editUser?.name              || '',
+    email      : editUser?.email             || '',
+    role       : editUser?.role              || 'auxiliar',
+    area       : editUser?.area              || '',
     gerencia_id: editUser?.gerencia_id?.toString() || '',
     password   : '',
   })
@@ -151,24 +153,41 @@ const UserFormModal = ({ user: editUser, onClose, onSaved }) => {
     departmentsAPI.getAll().then(r => setDepts(r.data.data)).catch(() => {})
   }, [])
 
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { toast.error('La imagen no puede superar 2 MB'); return }
+    setAvatarFile(file)
+    setPreview(URL.createObjectURL(file))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
     try {
+      let savedId = editUser?._id
       if (isEdit) {
         const { password, ...data } = form
         await usersAPI.update(editUser._id, data)
         toast.success('Usuario actualizado')
       } else {
-        await usersAPI.create(form)
-        toast.success('Usuario creado. Si no se ingresó contraseña, recibirá un correo para crearla.')
+        const res = await usersAPI.create(form)
+        savedId = res.data.data?.id || res.data.data?._id
+        toast.success('Usuario creado.')
+      }
+      // Subir avatar si se seleccionó uno
+      if (avatarFile && savedId) {
+        const fd = new FormData()
+        fd.append('avatar', avatarFile)
+        await usersAPI.uploadAvatar(savedId, fd)
       }
       onSaved(); onClose()
     } catch (e) { toast.error(e.response?.data?.message || 'Error') } finally { setSaving(false) }
   }
 
-  const canSetRole = ['superadmin','admin'].includes(user?.role)
+  // Todos los roles del sistema (igual para todos los que crean usuarios)
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const baseUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:3000'
 
   return (
     <Modal open title={isEdit ? 'Editar usuario' : 'Nuevo usuario'} onClose={onClose}
@@ -178,28 +197,49 @@ const UserFormModal = ({ user: editUser, onClose, onSaved }) => {
           {isEdit ? 'Guardar cambios' : 'Crear usuario'}
         </Button>
       </>}>
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
+
+        {/* Foto de perfil */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-shrink-0">
+            {avatarPreview
+              ? <img src={avatarPreview.startsWith('blob') ? avatarPreview : `${baseUrl}${avatarPreview}`}
+                  alt="avatar" className="w-16 h-16 rounded-full object-cover border-2 border-[#F0F0F0]" />
+              : <Avatar name={form.name || 'U'} size="xl" />
+            }
+          </div>
+          <div>
+            <p className="text-xs font-medium text-[#626261] mb-1.5">Foto de perfil (opcional)</p>
+            <label className="cursor-pointer inline-flex items-center gap-2 text-xs font-medium
+              text-[#2E75B6] border border-[#2E75B6] rounded-lg px-3 py-1.5 hover:bg-[rgba(46,117,182,0.06)]
+              transition-colors">
+              <Camera size={13} /> Subir foto
+              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            </label>
+            <p className="text-2xs text-[#A0A09F] mt-1">JPG, PNG o WebP · máx. 2 MB</p>
+          </div>
+        </div>
+
         <Input label="Nombre completo *" placeholder="Juan Pérez García"
           value={form.name} onChange={e => f('name', e.target.value)} required />
         <Input label="Correo electrónico *" type="email" placeholder="juan@siradiacion.com.mx"
           value={form.email} onChange={e => f('email', e.target.value)} required disabled={isEdit} />
+
         <div className="grid grid-cols-2 gap-3">
-          {canSetRole && (
-            <Select label="Rol" value={form.role} onChange={e => f('role', e.target.value)}
-              options={Object.entries(ROLE_LABELS).map(([v,l]) => ({ value:v, label:l }))} />
-          )}
-          {/* Cambio 8: campo Área */}
+          <Select label="Rol" value={form.role} onChange={e => f('role', e.target.value)}
+            options={Object.entries(ROLE_LABELS).map(([v,l]) => ({ value:v, label:l }))} />
           <Select label="Área" value={form.area} onChange={e => f('area', e.target.value)}
             placeholder="Selecciona área"
             options={AREAS.map(a => ({ value:a, label:a }))} />
         </div>
-        {/* Cambio 8: campo Gerencia */}
+
         {departments.length > 0 && (
           <Select label="Gerencia / Departamento" value={form.gerencia_id}
             onChange={e => f('gerencia_id', e.target.value)}
             placeholder="Sin gerencia asignada"
             options={departments.map(d => ({ value: d._id, label: d.name }))} />
         )}
+
         {!isEdit && (
           <div>
             <Input label="Contraseña (opcional)" type="password"
@@ -214,6 +254,7 @@ const UserFormModal = ({ user: editUser, onClose, onSaved }) => {
     </Modal>
   )
 }
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DEPARTMENTS PAGE
@@ -492,6 +533,147 @@ export const NotificationsPage = () => {
               </div>
             )
         }
+      </Card>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ACCOUNT SETTINGS PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+export const AccountSettingsPage = () => {
+  const { user, login } = useAuth()
+  const userId = user?._id || user?.userId
+  const baseUrl = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:3000'
+
+  const [form, setForm]           = useState({ name: user?.name || '' })
+  const [avatarFile, setFile]     = useState(null)
+  const [preview, setPreview]     = useState(user?.avatar_url || null)
+  const [saving, setSaving]       = useState(false)
+  const [savingPhoto, setSavingP] = useState(false)
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { toast.error('La imagen no puede superar 2 MB'); return }
+    setFile(file)
+    setPreview(URL.createObjectURL(file))
+  }
+
+  const handleSavePhoto = async () => {
+    if (!avatarFile) return
+    setSavingP(true)
+    try {
+      const fd = new FormData()
+      fd.append('avatar', avatarFile)
+      const res = await usersAPI.uploadAvatar(userId, fd)
+      toast.success('Foto actualizada')
+      // Actualizar localStorage con nueva URL
+      const stored = JSON.parse(localStorage.getItem('sir_user') || '{}')
+      stored.avatar_url = res.data.avatar_url
+      localStorage.setItem('sir_user', JSON.stringify(stored))
+      setFile(null)
+    } catch (e) { toast.error(e.response?.data?.message || 'Error') } finally { setSavingP(false) }
+  }
+
+  const handleRemovePhoto = async () => {
+    try {
+      await usersAPI.deleteAvatar(userId)
+      setPreview(null); setFile(null)
+      const stored = JSON.parse(localStorage.getItem('sir_user') || '{}')
+      delete stored.avatar_url
+      localStorage.setItem('sir_user', JSON.stringify(stored))
+      toast.success('Foto eliminada')
+    } catch { toast.error('Error al eliminar la foto') }
+  }
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault()
+    if (!form.name.trim()) { toast.error('El nombre no puede estar vacío'); return }
+    setSaving(true)
+    try {
+      await usersAPI.updateMySettings({ name: form.name })
+      const stored = JSON.parse(localStorage.getItem('sir_user') || '{}')
+      stored.name = form.name
+      localStorage.setItem('sir_user', JSON.stringify(stored))
+      toast.success('Nombre actualizado')
+    } catch (e) { toast.error(e.response?.data?.message || 'Error') } finally { setSaving(false) }
+  }
+
+  const currentAvatar = preview || user?.avatar_url
+
+  return (
+    <div className="max-w-lg mx-auto space-y-5 animate-fade-in">
+      <div>
+        <h1 className="text-2xl font-bold text-[#1D1C19]">Mi cuenta</h1>
+        <p className="text-sm text-[#626261] mt-0.5">Configura tu perfil y foto</p>
+      </div>
+
+      {/* Foto de perfil */}
+      <Card>
+        <Card.Header><Card.Title>Foto de perfil</Card.Title></Card.Header>
+        <Card.Body>
+          <div className="flex items-center gap-5">
+            {/* Preview */}
+            <div className="relative flex-shrink-0">
+              {currentAvatar
+                ? <img
+                    src={currentAvatar.startsWith('blob') ? currentAvatar
+                      : currentAvatar.startsWith('http') ? currentAvatar
+                      : `${baseUrl}${currentAvatar}`}
+                    alt="avatar"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-[#F0F0F0]"
+                  />
+                : <Avatar name={user?.name || 'U'} size="xl" />
+              }
+            </div>
+
+            <div className="flex-1 space-y-2">
+              <label className="cursor-pointer inline-flex items-center gap-2 text-sm font-medium
+                text-[#2E75B6] border border-[#2E75B6] rounded-lg px-4 py-2
+                hover:bg-[rgba(46,117,182,0.06)] transition-colors">
+                <Camera size={15} /> Seleccionar foto
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </label>
+              <p className="text-2xs text-[#A0A09F]">JPG, PNG o WebP · máx. 2 MB</p>
+
+              <div className="flex gap-2">
+                {avatarFile && (
+                  <Button variant="primary" size="sm" loading={savingPhoto}
+                    onClick={handleSavePhoto}>
+                    Guardar foto
+                  </Button>
+                )}
+                {(currentAvatar && !currentAvatar.startsWith('blob')) && (
+                  <Button variant="outline" size="sm" onClick={handleRemovePhoto}>
+                    Eliminar foto
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+
+      {/* Datos personales */}
+      <Card>
+        <Card.Header><Card.Title>Datos personales</Card.Title></Card.Header>
+        <Card.Body>
+          <form onSubmit={handleSaveSettings} className="space-y-4">
+            <Input label="Nombre completo" value={form.name}
+              onChange={e => setForm(f => ({...f, name: e.target.value}))}
+              required />
+            <Input label="Correo electrónico" value={user?.email || ''}
+              disabled hint="El correo no puede modificarse. Contacta a TI si necesitas cambiarlo." />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Rol" value={ROLE_LABELS[user?.role] || user?.role || '—'} disabled />
+              <Input label="Área" value={user?.area || '—'} disabled />
+            </div>
+            <Button type="submit" variant="primary" loading={saving}>
+              Guardar cambios
+            </Button>
+          </form>
+        </Card.Body>
       </Card>
     </div>
   )

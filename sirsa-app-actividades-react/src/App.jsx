@@ -6,7 +6,7 @@ import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from './pages/auth/A
 import DashboardPage from './pages/dashboard/DashboardPage'
 import { ProjectsPage, ProjectDetailPage } from './pages/projects/ProjectsPages'
 import { ActivitiesPage, ActivityDetailPage } from './pages/activities/ActivitiesPages'
-import { UsersPage, DepartmentsPage, NotificationsPage } from './pages/misc/MiscPages'
+import { UsersPage, DepartmentsPage, NotificationsPage, AccountSettingsPage } from './pages/misc/MiscPages'
 import HelpPage from './pages/help/HelpPage'
 import CalendarPage, { WelcomePrompt } from './pages/calendar/CalendarPage'
 import ReportsPage from './pages/reports/ReportsPage'
@@ -68,8 +68,9 @@ const InnerApp = () => (
         <Route path="reports"             element={<ReportsPage />} />
         <Route path="users"               element={<UsersPage />} />
         <Route path="departments"         element={<DepartmentsPage />} />
-        <Route path="notifications"       element={<NotificationsPage />} />
-        <Route path="help"                element={<HelpPage />} />
+        <Route path="notifications"      element={<NotificationsPage />} />
+        <Route path="settings"           element={<AccountSettingsPage />} />
+        <Route path="help"               element={<HelpPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -47,7 +47,7 @@ export const ProjectsPage = () => {
     : projects
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in min-h-[90vh]">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
           <h1 className="text-xl font-semibold text-charcoal">Proyectos</h1>
@@ -144,7 +144,7 @@ const ProjectCard = ({ project: p }) => {
         {p.members_info?.length > 0 && (
           <div className="flex items-center gap-1 mb-2">
             {p.members_info.slice(0, 5).map(m => (
-              <Avatar key={m._id} name={m.name} size="xs" title={m.name} />
+              <Avatar key={m._id} name={m.name} size="xs" title={m.name} src={m.avatar_url}/>
             ))}
             {p.members_info.length > 5 && (
               <span className="text-[10px] text-charcoal-muted ml-1">
@@ -195,6 +195,7 @@ export const ProjectDetailPage = () => {
         activitiesAPI.getAll({ project_id: id })
       ])
       setProject(projRes.data.data)
+      console.log(projRes.data.data)
       setDash(dashRes.data.data)
       setActs(actsRes.data.data)
     } catch { toast.error('Error al cargar el proyecto') } finally { setLoading(false) }
@@ -304,7 +305,7 @@ export const ProjectDetailPage = () => {
                   </span>
                   {project.members_info.map(m => (
                     <span key={m._id} className="flex items-center gap-1">
-                      <Avatar name={m.name} size="xs" />
+                      <Avatar name={m.name} size="xs" src={m.avatar_url}/>
                       <span className="text-xs text-charcoal">{m.name}</span>
                     </span>
                   ))}
@@ -438,7 +439,7 @@ const ProjectActivities = ({ projectId, activities, onRefresh }) => {
                         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                           {a.assignees_info.map(u => (
                             <span key={u._id} className="flex items-center gap-1">
-                              <Avatar name={u.name} size="xs" />
+                              <Avatar name={u.name} size="xs" src={u.avatar_url}/>
                               <span className="text-[10px] text-charcoal-muted">{u.name}</span>
                             </span>
                           ))}
@@ -523,59 +524,155 @@ const ProjectChat = ({ projectId, user, socket }) => {
   const userId = user._id || user.userId
 
   return (
-    <Card>
-      <Card.Header>
-        <Card.Title className="flex items-center gap-1.5">
-          <MessageSquare size={14} /> Chat del proyecto
-        </Card.Title>
-      </Card.Header>
-      <div className="flex flex-col" style={{ height: '420px' }}>
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
-          {hasMore && (
-            <button onClick={() => load(messages[0]?._id)}
-              className="w-full text-xs text-navy hover:underline py-1">
-              Cargar mensajes anteriores
-            </button>
-          )}
-          {loading
-            ? <div className="flex justify-center py-8"><Spinner /></div>
-            : messages.length === 0
-              ? <Empty icon={<MessageSquare size={28} />} title="Sin mensajes aún" description="Sé el primero en escribir" />
-              : messages.map(m => {
-                const isMe = m.user_id?.toString() === userId?.toString()
-                return (
-                  <div key={m._id} className={cn('flex gap-2', isMe && 'flex-row-reverse')}>
-                    <Avatar name={m.user?.name} size="sm" className="flex-shrink-0 mt-0.5" />
-                    <div className={cn('max-w-[75%]', isMe && 'items-end flex flex-col')}>
-                      <div className="flex items-baseline gap-1.5 mb-0.5">
-                        {!isMe && <span className="text-xs font-medium text-navy">{m.user?.name}</span>}
-                        <span className="text-[10px] text-charcoal-muted">
-                          {new Date(m.createdAt).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}
-                        </span>
-                        {m.edited && <span className="text-[10px] text-charcoal-muted">(editado)</span>}
-                      </div>
-                      <div className={cn('px-3 py-1.5 rounded-lg text-sm',
-                        m.deleted ? 'text-charcoal-muted italic text-xs bg-silver' :
-                        isMe ? 'bg-navy text-white' : 'bg-silver text-charcoal')}>
-                        {m.deleted ? 'Mensaje eliminado' : m.message}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-          }
-          <div ref={bottomRef} />
+    <Card className="bg-[#FBFBFB] border border-[#A0A09F] shadow-lg overflow-hidden">
+  <Card.Header className="bg-[#1D1C19] text-[#FBFBFB] border-b border-[#B08629]">
+    <Card.Title className="flex items-center gap-2">
+      <MessageSquare size={16} className="text-[#F8CD24]" />
+      Chat del proyecto
+    </Card.Title>
+  </Card.Header>
+
+  <div className="flex flex-col" style={{ height: '420px' }}>
+    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-[#FBFBFB]">
+
+      {hasMore && (
+        <button
+          onClick={() => load(messages[0]?._id)}
+          className="w-full text-xs text-[#B08629] hover:text-[#1D1C19] hover:underline py-1 transition"
+        >
+          Cargar mensajes anteriores
+        </button>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Spinner />
         </div>
-        <form onSubmit={send} className="border-t border-silver-border px-3 py-2 flex items-center gap-2">
-          <input value={text} onChange={e => setText(e.target.value)}
-            placeholder="Escribe un mensaje…"
-            className="flex-1 text-sm px-3 py-1.5 rounded-full border border-silver-border bg-white
-              focus:outline-none focus:border-navy" />
-          <Button type="submit" variant="navy" size="icon" loading={sending}
-            icon={!sending && <Send size={14} />} />
-        </form>
-      </div>
-    </Card>
+      ) : messages.length === 0 ? (
+        <Empty
+          icon={<MessageSquare size={28} className="text-[#B08629]" />}
+          title="Sin mensajes aún"
+          description="Sé el primero en escribir"
+        />
+      ) : (
+        messages.map(m => {
+          const isMe = m.user_id?.toString() === userId?.toString()
+
+          return (
+            <div
+              key={m._id}
+              className={cn(
+                'flex gap-2',
+                isMe && 'flex-row-reverse'
+              )}
+            >
+              <Avatar
+                name={m.user?.name}
+                size="sm"
+                className="flex-shrink-0 mt-0.5"
+                src={m.user?.avatar_url}
+              />
+
+              <div
+                className={cn(
+                  'max-w-[75%]',
+                  isMe && 'items-end flex flex-col'
+                )}
+              >
+                <div className="flex items-baseline gap-1.5 mb-1">
+
+                  {!isMe && (
+                    <span className="text-xs font-semibold text-[#B08629]">
+                      {m.user?.name}
+                    </span>
+                  )}
+
+                  <span className="text-[10px] text-[#626261]">
+                    {new Date(m.createdAt).toLocaleTimeString('es-MX', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+
+                  {m.edited && (
+                    <span className="text-[10px] text-[#626261]">
+                      (editado)
+                    </span>
+                  )}
+
+                </div>
+
+                <div
+                  className={cn(
+                    'px-4 py-2 rounded-2xl shadow-sm text-sm leading-relaxed',
+
+                    m.deleted
+                      ? 'italic text-xs bg-[#A0A09F]/30 text-[#626261]'
+
+                      : isMe
+                        ? 'bg-[#F8CD24] text-[#1D1C19] rounded-br-md'
+
+                        : 'bg-white text-[#1D1C19] border border-[#A0A09F]/40 rounded-bl-md'
+                  )}
+                >
+                  {m.deleted
+                    ? 'Mensaje eliminado'
+                    : m.message}
+                </div>
+
+              </div>
+            </div>
+          )
+        })
+      )}
+
+      <div ref={bottomRef} />
+    </div>
+
+    <form
+      onSubmit={send}
+      className="border-t border-[#A0A09F] bg-white px-3 py-3 flex items-center gap-2"
+    >
+      <input
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Escribe un mensaje…"
+        className="
+          flex-1
+          rounded-full
+          border
+          border-[#A0A09F]
+          bg-[#FBFBFB]
+          px-4
+          py-2
+          text-sm
+          text-[#1D1C19]
+          placeholder:text-[#626261]
+          focus:outline-none
+          focus:border-[#F8CD24]
+          focus:ring-2
+          focus:ring-[#F8CD24]/40
+          transition
+        "
+      />
+
+      <Button
+        type="submit"
+        loading={sending}
+        size="icon"
+        className="
+          bg-[#1D1C19]
+          hover:bg-[#F8CD24]
+          hover:text-[#1D1C19]
+          text-white
+          rounded-full
+          transition-all
+        "
+        icon={!sending && <Send size={15} />}
+      />
+    </form>
+  </div>
+</Card>
   )
 }
 
@@ -686,7 +783,7 @@ const ProjectMembers = ({ projectId, members, isManager, onRefresh }) => {
             <div className="divide-y divide-silver-border">
               {members.map(m => (
                 <div key={m._id} className="px-4 py-3 flex items-center gap-3">
-                  <Avatar name={m.name} size="md" />
+                  <Avatar name={m.name} size="md" src={m.avatar_url}/>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-charcoal">{m.name}</p>
                     <p className="text-xs text-charcoal-muted">{m.email}</p>
@@ -725,7 +822,7 @@ const ProjectMembers = ({ projectId, members, isManager, onRefresh }) => {
                     <button key={u._id} onClick={() => { handleAdd(u._id); setShowAdd(false); setSearch('') }}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded hover:bg-silver
                         transition-colors text-left">
-                      <Avatar name={u.name} size="sm" />
+                      <Avatar name={u.name} size="sm" src={u.avatar_url}/>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-charcoal">{u.name}</p>
                         <p className="text-xs text-charcoal-muted">{u.email}</p>
@@ -828,7 +925,7 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
                           ? 'bg-[#1D1C19] text-white'
                           : 'hover:bg-[rgba(248,205,36,0.08)] text-[#1D1C19]'
                       )}>
-                      <Avatar name={u.name} size="xs" />
+                      <Avatar name={u.name} size="xs" src={u.avatar_url}/>
                       <span className="truncate text-xs">{u.name}</span>
                     </button>
                   )
@@ -923,9 +1020,9 @@ const ProjectFormModal = ({ onClose, onSaved }) => {
                 <button key={u._id} type="button" onClick={() => toggleMember(u._id)}
                   className={cn(
                     'flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors',
-                    selected ? 'bg-navy text-white' : 'hover:bg-silver text-charcoal'
+                    selected ? 'bg-yellow-500 text-gray-800' : 'hover:bg-silver text-charcoal'
                   )}>
-                  <Avatar name={u.name} size="xs" />
+                  <Avatar name={u.name} size="xs" src={u.avatar_url} />
                   <span className="truncate">{u.name}</span>
                 </button>
               )

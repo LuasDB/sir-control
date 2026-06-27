@@ -184,7 +184,7 @@ class Projects {
             from     : 'users',
             localField: 'members',
             foreignField: '_id',
-            pipeline : [{ $project: { name: 1, role: 1 } }],
+            pipeline : [{ $project: { name: 1, role: 1,avatar_url:1 } }],
             as       : 'members_info'
           }
         },
@@ -275,7 +275,7 @@ class Projects {
             from     : 'users',
             localField: 'members',
             foreignField: '_id',
-            pipeline : [{ $project: { name: 1, role: 1, email: 1 } }],
+            pipeline : [{ $project: { name: 1, role: 1, email: 1, avatar_url:1} }],
             as       : 'members_info'
           }
         }
@@ -725,7 +725,7 @@ class Projects {
             from: 'users',
             localField: 'assignees',
             foreignField: '_id',
-            pipeline: [{ $project: { name: 1 } }],
+            pipeline: [{ $project: { name: 1,avatar_url:1 } }],
             as: 'assignees_info'
           }
         },
@@ -760,7 +760,7 @@ class Projects {
             from: 'users',
             localField: '_id',
             foreignField: '_id',
-            pipeline: [{ $project: { name: 1, role: 1 } }],
+            pipeline: [{ $project: { name: 1, role: 1,avatar_url:1 } }],
             as: 'user'
           }
         },

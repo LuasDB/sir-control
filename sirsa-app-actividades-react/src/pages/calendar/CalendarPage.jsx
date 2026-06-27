@@ -88,7 +88,7 @@ export const WelcomePrompt = ({ onDismiss, onGoCalendar }) => {
                 Buenos días
               </p>
               <h2 className="text-white text-lg font-bold leading-tight">
-                {user?.name?.split(' ')[0] || 'Usuario'} 👋
+                {`${user?.name?.split(' ')[0]} ${user?.name?.split(' ')[1]}`|| 'Usuario'} 👋
               </h2>
               <p className="text-[#626261] text-xs mt-1">
                 {today.toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' })}

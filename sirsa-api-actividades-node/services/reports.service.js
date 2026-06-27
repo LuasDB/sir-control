@@ -127,7 +127,7 @@ class Reports {
             from     : 'users',
             localField: '_id',
             foreignField: '_id',
-            pipeline : [{ $project: { name:1, role:1, area:1, gerencia_id:1 } }],
+            pipeline : [{ $project: { name:1, role:1, area:1, gerencia_id:1,avatar_url:1 } }],
             as       : 'user'
           }
         },

@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, ClipboardList, Users, Building2,
-  Bell, LogOut, BotIcon, ChevronDown, Menu, X, HelpCircle,
-  CalendarDays, BarChart2
+  Bell, LogOut, RadioTower, ChevronDown, Menu, X, HelpCircle,
+  CalendarDays, BarChart2, Settings
 } from 'lucide-react'
 import { useAuth, useNotifications } from '../../context/AppContext'
 import { Avatar, Tooltip } from '../ui'
@@ -36,11 +36,11 @@ const Sidebar = ({ collapsed }) => {
         collapsed ? 'justify-center px-0' : 'gap-3 px-4'
       )}>
         <div className="w-8 h-8 rounded-lg bg-[#1D1C19] flex items-center justify-center flex-shrink-0">
-          <BotIcon size={15} className="text-[#F8CD24]" />
+          <RadioTower size={15} className="text-[#F8CD24]" />
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <div className="text-sm font-bold text-[#1D1C19] leading-tight">SIR-Flow</div>
+            <div className="text-sm font-bold text-[#1D1C19] leading-tight">SIR-Track</div>
             <div className="text-2xs text-[#A0A09F] leading-tight">Dept. Técnico</div>
           </div>
         )}
@@ -112,7 +112,12 @@ const Topbar = ({ onToggle, collapsed }) => {
         <button onClick={() => setMenu(v => !v)}
           className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-lg
             hover:bg-white/10 transition-colors">
-          <Avatar name={user?.name} size="sm" />
+          {user?.avatar_url
+            ? <img src={`${import.meta.env.VITE_API_URL?.replace('/api/v1','') || 'http://localhost:3000'}${user.avatar_url}`}
+                alt={user.name}
+                className="w-7 h-7 rounded-full object-cover border border-white/20" />
+            : <Avatar name={user?.name} size="sm" src={user?.avatar_url} />
+          }
           <div className="hidden sm:block text-left">
             <div className="text-xs font-semibold text-white leading-tight truncate max-w-[110px]">
               {user?.name}
@@ -133,6 +138,11 @@ const Topbar = ({ onToggle, collapsed }) => {
                 <p className="text-sm font-semibold text-[#1D1C19] truncate">{user?.name}</p>
                 <p className="text-2xs text-[#A0A09F] truncate">{user?.email}</p>
               </div>
+              <button onClick={() => { navigate('/settings'); setMenu(false) }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#1D1C19]
+                  hover:bg-[rgba(248,205,36,0.06)] transition-colors">
+                <Settings size={14} className="text-[#626261]" /> Mi cuenta
+              </button>
               <button onClick={() => { logout(); setMenu(false) }}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#E63946]
                   hover:bg-[rgba(230,57,70,0.06)] transition-colors">
@@ -162,7 +172,7 @@ const AppLayout = () => {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar onToggle={() => setCollapsed(v => !v)} collapsed={collapsed} />
-        <main className="flex-1 overflow-y-auto scrollbar-thin ">
+        <main className="flex-1 overflow-y-auto scrollbar-thin">
           <div className="max-w-[1400px] mx-auto p-5 lg:p-6">
             <Outlet />
           </div>

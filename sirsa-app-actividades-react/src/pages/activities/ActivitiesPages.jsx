@@ -110,7 +110,7 @@ export const ActivitiesPage = () => {
                           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                             {a.assignees_info.map(u => (
                               <span key={u._id} className="flex items-center gap-1">
-                                <Avatar name={u.name} size="xs" />
+                                <Avatar name={u.name} size="xs" src={u.avatar_url} />
                                 <span className="text-[10px] text-charcoal-muted">{u.name}</span>
                               </span>
                             ))}
@@ -265,7 +265,7 @@ export const ActivityDetailPage = () => {
                   <span className="text-xs text-charcoal-muted">Asignados a:</span>
                   {activity.assignees_info.map(u => (
                     <span key={u._id} className="flex items-center gap-1.5 bg-silver px-2 py-1 rounded-full">
-                      <Avatar name={u.name} size="xs" />
+                      <Avatar name={u.name} size="xs" src={u.avatar_url} />
                       <span className="text-xs text-charcoal font-medium">{u.name}</span>
                       <Badge variant="default" className="text-[9px] px-1">{u.role}</Badge>
                     </span>
@@ -341,7 +341,7 @@ export const ActivityDetailPage = () => {
             <div className="divide-y divide-silver-border max-h-64 overflow-y-auto scrollbar-thin">
               {logs.slice(0,5).map(log => (
                 <div key={log._id} className="px-4 py-2.5 flex items-start gap-2">
-                  <Avatar name={log.user?.name} size="xs" className="mt-0.5" />
+                  <Avatar name={log.user?.name} size="xs" className="mt-0.5" src={log.user?.avatar_url} />
                   <div className="flex-1 min-w-0">
                     <span className="text-xs font-medium text-charcoal">{log.user?.name}</span>
                     <span className="text-xs text-charcoal-muted ml-1.5">{LOG_LABELS[log.action] || log.action}</span>
@@ -379,7 +379,7 @@ export const ActivityDetailPage = () => {
               ? <Empty title="Sin entradas" />
               : logs.map(log => (
                 <div key={log._id} className="px-4 py-3 flex items-start gap-3">
-                  <Avatar name={log.user?.name} size="sm" />
+                  <Avatar name={log.user?.name} size="sm" src={log.user?.avatar_url} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-charcoal">{log.user?.name}</span>
@@ -762,7 +762,7 @@ const ActivityEditModal = ({ activity, onClose, onSaved }) => {
                 <button key={uid} type="button" onClick={() => toggleAssignee(uid)}
                   className={cn('flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm transition-colors',
                     sel ? 'bg-[#1D1C19] text-white' : 'hover:bg-[rgba(248,205,36,0.08)] text-[#1D1C19]')}>
-                  <Avatar name={u.name} size="xs" />
+                  <Avatar name={u.name} size="xs" src={u.avatar_url} />
                   <span className="truncate text-xs">{u.name}</span>
                 </button>
               )

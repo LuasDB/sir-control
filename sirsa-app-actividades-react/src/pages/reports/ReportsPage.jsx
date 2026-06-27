@@ -38,7 +38,7 @@ const WorkloadTable = ({ data }) => {
   return (
     <div className="overflow-x-auto">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_80px_80px_80px_80px_120px_80px] gap-2
+      <div className="grid grid-cols-[300px_80px_80px_80px_80px_80px_80px_120px_80px] gap-2
         px-4 py-2.5 bg-[#1D1C19] text-white text-2xs font-semibold uppercase tracking-wider
         rounded-t-lg">
         <span>Usuario</span>
@@ -46,6 +46,8 @@ const WorkloadTable = ({ data }) => {
         <span className="text-center">Cerradas</span>
         <span className="text-center">Básica</span>
         <span className="text-center">Intermedia</span>
+        <span className="text-center">Avanzada</span>
+        <span className="text-center">Critica</span>
         <span>Carga %</span>
         <span className="text-center">Eficiencia</span>
       </div>
@@ -57,11 +59,11 @@ const WorkloadTable = ({ data }) => {
                           : row.efficiencyPct >= 40 ? '#B08629' : '#E63946'
           return (
             <div key={row.user?._id || i}
-              className="grid grid-cols-[1fr_80px_80px_80px_80px_120px_80px] gap-2
+              className="grid grid-cols-[300px_80px_80px_80px_80px_80px_80px_120px_80px] gap-2
                 px-4 py-3 items-center hover:bg-[rgba(248,205,36,0.04)] transition-colors">
 
               <div className="flex items-center gap-2.5 min-w-0">
-                <Avatar name={row.user?.name} size="sm" />
+                <Avatar name={row.user?.name} size="sm" src={row.user?.avatar_url} />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-[#1D1C19] truncate">
                     {row.user?.name || 'Usuario eliminado'}
@@ -70,10 +72,12 @@ const WorkloadTable = ({ data }) => {
                 </div>
               </div>
 
-              <p className="text-sm font-bold text-[#1D1C19] text-center">{row.activeCount}</p>
+              <p className="text-sm font-bold text-[#1D1C19] text-center"> {row.activeCount}</p>
               <p className="text-sm font-bold text-[#2BA84A] text-center">{row.closed}</p>
-              <p className="text-xs text-center text-[#2BA84A]">{row.complexity?.basica || 0}</p>
-              <p className="text-xs text-center text-[#2E75B6]">{row.complexity?.intermedia || 0}</p>
+              <p className="text-xs text-center text-[#2E75B6]">{row.complexity?.basica || 0}</p>
+              <p className="text-xs text-center text-[#d9cb08]">{row.complexity?.intermedia || 0}</p>
+              <p className="text-xs text-center text-[#d92dcb]">{row.complexity?.avanzada || 0}</p>
+              <p className="text-xs text-center text-[#ea304c]">{row.complexity?.critica || 0}</p>
 
               <WorkloadBar pct={row.loadPct} color={loadColor} />
 
