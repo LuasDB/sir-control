@@ -65,8 +65,8 @@ class Auth{
             data:{name,resetLink},
             templateEmail:'register',
             attachments:[{
-              filename:'samartech',
-              path:path.join('emails/samartech.png'),
+              filename:'sir-flow',
+              path:path.join('emails/sir-flow.png'),
               cid:'logo_empresa'
             }]
           })
@@ -139,8 +139,8 @@ class Auth{
         data:{name:user.name,resetLink},
         templateEmail:'restartPass',
         attachments:[{
-          filename:'samartech',
-            path:path.join('emails/samartech.png'),
+          filename:'sir-flow',
+            path:path.join('emails/sir-flow.png'),
             cid:'logo_empresa'
         }]
       })
