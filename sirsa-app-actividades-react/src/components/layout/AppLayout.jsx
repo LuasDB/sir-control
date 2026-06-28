@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, ClipboardList, Users, Building2,
-  Bell, LogOut, RadioTower, ChevronDown, Menu, X, HelpCircle,
+  Bell, LogOut, BotIcon, ChevronDown, Menu, X, HelpCircle,
   CalendarDays, BarChart2, Settings
 } from 'lucide-react'
 import { useAuth, useNotifications } from '../../context/AppContext'
@@ -36,7 +36,7 @@ const Sidebar = ({ collapsed }) => {
         collapsed ? 'justify-center px-0' : 'gap-3 px-4'
       )}>
         <div className="w-8 h-8 rounded-lg bg-[#1D1C19] flex items-center justify-center flex-shrink-0">
-          <RadioTower size={15} className="text-[#F8CD24]" />
+          <BotIcon size={15} className="text-[#F8CD24]" />
         </div>
         {!collapsed && (
           <div className="min-w-0">
@@ -158,7 +158,7 @@ const Topbar = ({ onToggle, collapsed }) => {
 
 // ── AppLayout ─────────────────────────────────────────────────────────────────
 const AppLayout = () => {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F5F5F5]">

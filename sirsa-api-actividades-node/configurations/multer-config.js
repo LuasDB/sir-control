@@ -14,17 +14,18 @@ import fs from 'fs'
  * Para otros módulos (sin folio OS) se sigue usando la carpeta del collection.
  */
 
+const BASE_UPLOAD_PATH = process.env.UPLOAD_PATH || 'uploads'
+
 const storageConfig = (collection) => {
   return multer.diskStorage({
     destination: (req, file, cb) => {
-      // Cambio 3: si viene folioOs en el request, subcarpeta por OS
       const subFolder = req.folioOs
         ? req.folioOs.replace(/[^a-zA-Z0-9\-_]/g, '_')  // sanitizar nombre
         : ''
 
       const uploadPath = subFolder
-        ? `uploads/${collection}/${subFolder}`
-        : `uploads/${collection}`
+        ? path.join(BASE_UPLOAD_PATH, collection, subFolder)
+        : path.join(BASE_UPLOAD_PATH, collection)
 
       if (!fs.existsSync(uploadPath)) {
         fs.mkdirSync(uploadPath, { recursive: true })
