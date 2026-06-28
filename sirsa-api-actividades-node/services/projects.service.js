@@ -418,6 +418,44 @@ class Projects {
     }
   }
 
+  async updateStatus(id, newStatus, userId) {
+  try {
+    if (!ObjectId.isValid(id)) {
+      throw Boom.badRequest(`El ID ${id} no es válido`)
+    }
+
+    const VALID = ['pendiente','en_proceso','retrasado','en_revision','cerrado','cancelado']
+    if (!VALID.includes(newStatus)) {
+      throw Boom.badData(`Estatus "${newStatus}" no válido`)
+    }
+
+    const project = await db.collection('projects').findOne({ _id: new ObjectId(id) })
+    if (!project) throw Boom.notFound('Proyecto no encontrado')
+
+    if (project.status === newStatus) {
+      throw Boom.conflict(`El proyecto ya tiene el estatus "${newStatus}"`)
+    }
+
+    const setObj = { status: newStatus, updatedAt: new Date() }
+
+    // Si se cierra, registrar fecha real
+    if (newStatus === 'cerrado') setObj.closed_at = new Date()
+    // Si se reactiva, limpiar fecha de cierre
+    if (newStatus !== 'cerrado') setObj.closed_at = null
+
+    const result = await db.collection('projects').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: setObj }
+    )
+
+    return result
+
+  } catch (error) {
+    if (Boom.isBoom(error)) throw error
+    throw Boom.badImplementation('No se pudo actualizar el estatus', error)
+  }
+}
+
   /*
    * Recalcula el progreso del proyecto en base a actividades.
    * Se llama desde activities.service.js cada vez que una actividad

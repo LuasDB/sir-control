@@ -328,6 +328,29 @@ export const ProjectDetailPage = () => {
                       Editar
                     </Button>
                   )}
+
+                  {/* ── NUEVO: selector de estatus ── */}
+                  <select
+                    value={project.status}
+                    onChange={async (e) => {
+                      try {
+                        await projectsAPI.updateStatus(project._id, e.target.value)
+                        toast.success(`Estatus actualizado a "${e.target.value}"`)
+                        load()
+                      } catch (err) {
+                        toast.error(err.response?.data?.message || 'Error')
+                      }
+                    }}
+                    className="text-sm border border-[#D9D9D9] rounded-lg px-3 py-2 bg-white
+                      text-[#1D1C19] focus:outline-none focus:border-[#F8CD24] min-h-[40px]">
+                    <option value="pendiente">Pendiente</option>
+                    <option value="en_proceso">En proceso</option>
+                    <option value="en_revision">En revisión</option>
+                    <option value="retrasado">Retrasado</option>
+                    <option value="cerrado">Cerrado</option>
+                    <option value="cancelado">Cancelado</option>
+                  </select>
+
                   <Button variant="outline" size="sm" onClick={() => setCloseConfirm(true)}>
                     Cerrar proyecto
                   </Button>
@@ -356,7 +379,6 @@ export const ProjectDetailPage = () => {
         {[
           { id:'activities', label:'Actividades' },
           { id:'chat',       label:'Chat del proyecto' },
-          { id:'phases',     label:'Fases' },
           // Cambio 6: pestaña de miembros
           { id:'members',    label:`Equipo (${project.members_info?.length || 0})` },
         ].map(t => (

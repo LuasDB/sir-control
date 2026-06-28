@@ -211,6 +211,28 @@ const projectsRouter = (io) => {
     }
   })
 
+  // PATCH /projects/:id/status
+router.patch('/:id/status', authenticate, authorize(...MANAGEMENT_ROLES), async (req, res, next) => {
+  try {
+    const { status } = req.body
+    const result = await projects.updateStatus(
+      req.params.id,
+      status,
+      req.user._id || req.user.userId
+    )
+
+    if (io) {
+      io.emit('project:updated', { projectId: req.params.id, status })
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Estatus actualizado a "${status}"`,
+      data: result
+    })
+  } catch (error) { next(error) }
+})
+
   // POST /projects/:id/cancel
   router.post('/:id/cancel', authenticate, authorize(...MANAGEMENT_ROLES), async (req, res, next) => {
     try {

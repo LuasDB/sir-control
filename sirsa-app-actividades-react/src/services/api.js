@@ -64,6 +64,7 @@ export const projectsAPI = {
   update        : (id, d)         => api.patch(`/projects/${id}`, d),
   close         : (id)            => api.post(`/projects/${id}/close`),
   cancel        : (id)            => api.post(`/projects/${id}/cancel`),
+  updateStatus: (id, status) => api.patch(`/projects/${id}/status`, { status }),
   getDashboard  : (params)        => api.get('/projects/dashboard', { params }),
   getProjectDash: (id)            => api.get(`/projects/${id}/dashboard`),
   addPhase      : (id, d)         => api.post(`/projects/${id}/phases`, d),
