@@ -141,8 +141,12 @@ const startServer = async () => {
     app.use(logErrors)
     app.use(errorHandler)
 
-    // Archivos estáticos (uploads)
-    app.use('/uploads', express.static('uploads'))
+    // Archivos estáticos (uploads) — inline para que el navegador los muestre en lugar de descargarlos
+    app.use('/uploads', express.static('uploads', {
+      setHeaders: (res, filePath) => {
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filePath.split('/').pop())}"`)
+      }
+    }))
 
     // Servidor HTTP
     httpServer.listen(port, () => {

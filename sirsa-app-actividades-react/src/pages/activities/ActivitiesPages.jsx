@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   ClipboardList, Search, CheckSquare, Square, Paperclip,
   History, ChevronRight, Upload, Trash2, FileText, Image, File,
-  AlertCircle, StickyNote, Plus, Pencil
+  AlertCircle, StickyNote, Plus, Pencil,User
 } from 'lucide-react'
 import { activitiesAPI, usersAPI } from '../../services/api'
 import {
@@ -18,11 +18,13 @@ import toast from 'react-hot-toast'
 // ── Activities List ───────────────────────────────────────────────────────────
 export const ActivitiesPage = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [activities, setActivities] = useState([])
   const [loading, setLoading]       = useState(true)
   const [filters, setFilters]       = useState({
     search: '', status: '', priority: '',
-    overdue: new URLSearchParams(location.search).get('overdue') || ''
+    overdue: new URLSearchParams(location.search).get('overdue') || '',
+    mine:''
   })
 
   const load = useCallback(async () => {
@@ -32,10 +34,11 @@ export const ActivitiesPage = () => {
       if (filters.status)   params.status   = filters.status
       if (filters.priority) params.priority  = filters.priority
       if (filters.overdue)  params.overdue   = filters.overdue
+      if (filters.mine) params.assignee_id  = user?._id || user?.userId
       const res = await activitiesAPI.getAll(params)
       setActivities(res.data.data)
     } catch { toast.error('Error al cargar actividades') } finally { setLoading(false) }
-  }, [filters.status, filters.priority, filters.overdue])
+  }, [filters.status, filters.priority, filters.overdue, filters.mine, user])
 
   useEffect(() => { load() }, [load])
 
@@ -78,6 +81,13 @@ export const ActivitiesPage = () => {
                   ? 'bg-amber-50 border-amber-400 text-amber-700'
                   : 'border-silver-border bg-white text-charcoal')}>
               <AlertCircle size={13} className="inline mr-1" />Solo vencidas
+            </button>
+            <button onClick={() => setFilters(f => ({...f, mine: f.mine ? '' : 'true'}))}
+              className={cn('text-sm px-3 py-1.5 rounded border transition-colors',
+                filters.mine
+                  ? 'bg-[rgba(46,117,182,0.10)] border-[#2E75B6] text-[#2E75B6]'
+                  : 'border-silver-border bg-white text-charcoal')}>
+              <User size={13} className="inline mr-1" />Mis actividades
             </button>
           </div>
         </Card.Body>
@@ -565,11 +575,15 @@ const AttachmentsTab = ({ activityId, attachments = [], canEdit, onRefresh }) =>
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <a href={`${import.meta.env.VITE_API_URL?.replace('/api/v1','')}/${att.path}`}
-                      target="_blank" rel="noreferrer"
-                      className="text-xs text-navy hover:underline" onClick={e => e.stopPropagation()}>
+                    <button
+                      className="text-xs text-navy hover:underline"
+                      onClick={e => {
+                        e.stopPropagation()
+                        const base = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:3000'
+                        window.open(`${base}/${att.path}`, '_blank', 'noopener,noreferrer')
+                      }}>
                       Ver
-                    </a>
+                    </button>
                     {/* Cambio 2: cualquier asignado puede eliminar */}
                     {canEdit && (
                       <button onClick={() => handleDelete(att._id)}
