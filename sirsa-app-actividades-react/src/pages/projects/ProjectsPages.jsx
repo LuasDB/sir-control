@@ -16,11 +16,13 @@ import { useAuth, useSocket } from '../../context/AppContext'
 import toast from 'react-hot-toast'
 import { ClipboardList } from 'lucide-react'
 
+
 // ── Projects List ─────────────────────────────────────────────────────────────
 export const ProjectsPage = () => {
   const { user }   = useAuth()
   const navigate   = useNavigate()
   const canCreate  = MANAGEMENT_ROLES.includes(user?.role)
+  const isManager = MANAGEMENT_ROLES.includes(user?.role)
 
   const [projects, setProjects]   = useState([])
   const [loading, setLoading]     = useState(true)
@@ -82,11 +84,11 @@ export const ProjectsPage = () => {
                 <option key={s} value={s}>{s.replace('_',' ')}</option>
               ))}
             </select>
-            <select value={filters.area} onChange={e => setFilters(f => ({ ...f, area: e.target.value }))}
+            {isManager && (<select value={filters.area} onChange={e => setFilters(f => ({ ...f, area: e.target.value }))}
               className="text-sm border border-silver-border rounded px-2.5 py-1.5 bg-white focus:outline-none focus:border-navy">
               <option value="">Todas las áreas</option>
               {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
+            </select>)}
           </div>
         </Card.Body>
       </Card>

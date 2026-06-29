@@ -53,6 +53,9 @@ const DashboardPage = () => {
   const [loading, setLoad]  = useState(true)
   const [area, setArea]     = useState('')
 
+  const MANAGEMENT_ROLES = ['superadmin', 'admin', 'gerente', 'coordinador']
+  const isManager = MANAGEMENT_ROLES.includes(user?.role)
+
   const load = useCallback(async () => {
     setLoad(true)
     try {
@@ -84,16 +87,20 @@ const DashboardPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-[#1D1C19]">Dashboard</h1>
           <p className="text-sm text-[#626261] mt-0.5">
-            Resumen general del departamento técnico
+            {isManager
+              ? 'Resumen general del departamento técnico'
+              : 'Tus proyectos y actividades asignadas'}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <select value={area} onChange={e => setArea(e.target.value)}
+          {isManager && (
+            <select value={area} onChange={e => setArea(e.target.value)}
             className="text-sm border border-[#D9D9D9] rounded-lg px-3 py-2 bg-white
               text-[#1D1C19] focus:outline-none focus:border-[#F8CD24] min-h-[40px]">
             <option value="">Todas las áreas</option>
             {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
+          )}
           <Button variant="outline" size="md" icon={<RefreshCw size={13} />} onClick={load}>
             Actualizar
           </Button>
@@ -185,7 +192,8 @@ const DashboardPage = () => {
       </div>
 
       {/* Fila inferior */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className={cn('grid gap-4',
+        isManager ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1')}>
 
         {/* Por vencer */}
         <Card>
@@ -226,7 +234,7 @@ const DashboardPage = () => {
         </Card>
 
         {/* Carga de trabajo */}
-        <Card>
+        {isManager && (<Card>
           <Card.Header><Card.Title>Carga de trabajo</Card.Title></Card.Header>
           <div className="divide-y divide-[#F5F5F5]">
             {(data?.workload || []).length === 0
@@ -256,7 +264,7 @@ const DashboardPage = () => {
               })
             }
           </div>
-        </Card>
+        </Card>)}
       </div>
     </div>
   )

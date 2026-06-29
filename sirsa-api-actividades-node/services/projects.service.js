@@ -664,12 +664,19 @@ class Projects {
    */
   async getDashboardStats(filters = {}) {
     try {
+      const MANAGEMENT_ROLES = ['superadmin', 'admin', 'gerente', 'coordinador']
+      const isManager = MANAGEMENT_ROLES.includes(filters.userRole)
+      const userId    = filters.userId ? new ObjectId(filters.userId) : null
       const matchProject = {}
 
       if (filters.area) matchProject.area = filters.area
       if (filters.department_id && ObjectId.isValid(filters.department_id)) {
         matchProject.department_id = new ObjectId(filters.department_id)
       }
+      if (!isManager && userId) {
+      matchProject.members = userId
+      }
+
 
       // ── Conteos de proyectos por estatus ──
       const projectStats = await db.collection('projects').aggregate([
@@ -714,8 +721,11 @@ class Projects {
 
       // ── Conteos de actividades por estatus ──
       const activityMatchStage = {}
-      if (filters.area || filters.department_id) {
-        // Necesitamos hacer lookup desde activities hacia projects para filtrar
+      if (!isManager && userId) {
+        // Operativo: solo sus actividades directamente
+        activityMatchStage.assignees = userId
+      } else if (filters.area || filters.department_id) {
+        // Manager con filtro de área: derivar por proyecto
         const projectIds = await db.collection('projects')
           .find(matchProject, { projection: { _id: 1 } })
           .map(p => p._id).toArray()

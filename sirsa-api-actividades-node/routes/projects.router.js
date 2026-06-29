@@ -33,7 +33,9 @@ const projectsRouter = (io) => {
     try {
       const filters = {
         area: req.query.area,
-        department_id: req.query.department_id
+        department_id: req.query.department_id,
+        userId: req.user._id || req.user.userId,
+        userRole: req.user.role
       }
       const result = await projects.getDashboardStats(filters)
 
