@@ -21,10 +21,14 @@ const AuthShell = ({ children }) => (
 )
 
 // ── Login ─────────────────────────────────────────────────────────────────────
+const REMEMBER_EMAIL_KEY = 'sir_remember_email'
+
 export const LoginPage = () => {
   const { login }   = useAuth()
   const navigate    = useNavigate()
-  const [form, setForm]     = useState({ email:'', password:'' })
+  const rememberedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY) || ''
+  const [form, setForm]     = useState({ email: rememberedEmail, password:'' })
+  const [remember, setRemember] = useState(!!rememberedEmail)
   const [showPass, setShow] = useState(false)
   const [loading, setLoad]  = useState(false)
   const [error, setError]   = useState('')
@@ -34,6 +38,8 @@ export const LoginPage = () => {
     setError(''); setLoad(true)
     try {
       await login(form)
+      if (remember) localStorage.setItem(REMEMBER_EMAIL_KEY, form.email)
+      else localStorage.removeItem(REMEMBER_EMAIL_KEY)
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.message || 'Correo o contraseña incorrectos')
@@ -92,6 +98,16 @@ export const LoginPage = () => {
               </button>
             </div>
           </div>
+
+          <label className="flex items-center gap-2 text-xs text-[#626261] cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={e => setRemember(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-[#D9D9D6] text-[#F8CD24] focus:ring-[#F8CD24]"
+            />
+            Recordar mi correo
+          </label>
 
           {error && (
             <div className="text-xs text-[#E63946] bg-[rgba(230,57,70,0.08)] border border-[rgba(230,57,70,0.20)]
