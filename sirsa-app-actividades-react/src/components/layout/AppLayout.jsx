@@ -3,7 +3,7 @@ import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, ClipboardList, Users, Building2,
   Bell, LogOut, BotIcon, ChevronDown, Menu, X, HelpCircle,
-  CalendarDays, BarChart2, Settings
+  CalendarDays, BarChart2, Settings, Tags
 } from 'lucide-react'
 import { useAuth, useNotifications } from '../../context/AppContext'
 import { Avatar, Tooltip } from '../ui'
@@ -15,8 +15,9 @@ const NAV_ITEMS = [
   { to:'/activities',  icon:ClipboardList,   label:'Actividades'   },
   { to:'/calendar',    icon:CalendarDays,    label:'Calendario'    },
   { to:'/reports',     icon:BarChart2,       label:'Reportes',       roles:['superadmin','admin','gerente','coordinador'] },
-  { to:'/users',       icon:Users,           label:'Usuarios',       roles:['superadmin','admin','gerente','coordinador'] },
-  { to:'/departments', icon:Building2,        label:'Departamentos',  roles:['superadmin','admin'] },
+  { to:'/users',          icon:Users,     label:'Usuarios',          roles:['superadmin','admin','gerente','coordinador'] },
+  { to:'/departments',    icon:Building2,  label:'Departamentos',     roles:['superadmin','admin'] },
+  { to:'/activity-types', icon:Tags,      label:'Tipos de actividad', roles:['superadmin','admin','gerente','coordinador'] },
 ]
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────

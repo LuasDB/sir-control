@@ -90,6 +90,14 @@ export const activitiesAPI = {
   }),
   deleteAttachment: (id, attId)      => api.delete(`/activities/${id}/attachments/${attId}`),
 }
+export const activityTypesAPI = {
+  getAll  : (params)  => api.get('/activity-types', { params }),
+  getOne  : (id)      => api.get(`/activity-types/${id}`),
+  create  : (data)    => api.post('/activity-types', data),
+  update  : (id, d)   => api.patch(`/activity-types/${id}`, d),
+  activate: (id)      => api.patch(`/activity-types/${id}/activate`),
+  remove  : (id)      => api.delete(`/activity-types/${id}`),
+}
 export const chatAPI = {
   getMessages  : (projectId, params)        => api.get(`/projects/${projectId}/chat`, { params }),
   sendMessage  : (projectId, data)          => api.post(`/projects/${projectId}/chat`, data),

@@ -160,7 +160,7 @@ class Activities {
       const {
         project_id, phase_id, name, description,
         priority, complexity, assignees, depends_on,
-        start_date, target_date, checklist
+        start_date, target_date, checklist, activity_type_id
       } = data
 
       if (!project_id || !name) {
@@ -223,9 +223,27 @@ class Activities {
         throw Boom.badData(`Prioridad "${priority}" no válida. Opciones: ${VALID_PRIORITIES.join(', ')}`)
       }
 
+      // Validar tipo de actividad (catálogo activity_types), opcional
+      let activityTypeId = null
+      if (activity_type_id) {
+        if (!ObjectId.isValid(activity_type_id)) {
+          throw Boom.badRequest(`activity_type_id "${activity_type_id}" no es un ID válido`)
+        }
+        const type = await db.collection('activity_types').findOne(
+          { _id: new ObjectId(activity_type_id) },
+          { projection: { _id: 1, active: 1 } }
+        )
+        if (!type) throw Boom.notFound('El tipo de actividad no fue encontrado')
+        if (type.active === false) {
+          throw Boom.conflict('El tipo de actividad seleccionado está inactivo')
+        }
+        activityTypeId = new ObjectId(activity_type_id)
+      }
+
       const newActivity = {
         project_id  : new ObjectId(project_id),
         phase_id    : phase_id ? new ObjectId(phase_id) : null,
+        activity_type_id: activityTypeId,
         name,
         description : description || null,
         priority    : priority || 'media',
@@ -275,6 +293,9 @@ class Activities {
       }
       if (filters.status)   query.status   = filters.status
       if (filters.priority) query.priority  = filters.priority
+      if (filters.activity_type_id && ObjectId.isValid(filters.activity_type_id)) {
+        query.activity_type_id = new ObjectId(filters.activity_type_id)
+      }
 
       // Filtro por asignado (un usuario puede ver sus propias actividades)
       if (filters.assignee_id && ObjectId.isValid(filters.assignee_id)) {
@@ -307,6 +328,17 @@ class Activities {
           }
         },
         { $unwind: { path: '$project', preserveNullAndEmptyArrays: true } },
+        // Tipo de actividad (catálogo)
+        {
+          $lookup: {
+            from     : 'activity_types',
+            localField: 'activity_type_id',
+            foreignField: '_id',
+            pipeline : [{ $project: { name: 1, active: 1 } }],
+            as       : 'activity_type'
+          }
+        },
+        { $unwind: { path: '$activity_type', preserveNullAndEmptyArrays: true } },
         // Info de asignados
         {
           $lookup: {
@@ -382,6 +414,16 @@ class Activities {
         { $unwind: { path: '$project', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
+            from     : 'activity_types',
+            localField: 'activity_type_id',
+            foreignField: '_id',
+            pipeline : [{ $project: { name: 1, description: 1, active: 1 } }],
+            as       : 'activity_type'
+          }
+        },
+        { $unwind: { path: '$activity_type', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
             from     : 'users',
             localField: 'assignees',
             foreignField: '_id',
@@ -447,6 +489,24 @@ class Activities {
       if (dataToUpdate.phase_id) {
         dataToUpdate.phase_id = ObjectId.isValid(dataToUpdate.phase_id)
           ? new ObjectId(dataToUpdate.phase_id) : null
+      }
+      if (dataToUpdate.activity_type_id !== undefined) {
+        if (!dataToUpdate.activity_type_id) {
+          dataToUpdate.activity_type_id = null
+        } else {
+          if (!ObjectId.isValid(dataToUpdate.activity_type_id)) {
+            throw Boom.badRequest(`activity_type_id "${dataToUpdate.activity_type_id}" no es un ID válido`)
+          }
+          const type = await db.collection('activity_types').findOne(
+            { _id: new ObjectId(dataToUpdate.activity_type_id) },
+            { projection: { _id: 1, active: 1 } }
+          )
+          if (!type) throw Boom.notFound('El tipo de actividad no fue encontrado')
+          if (type.active === false) {
+            throw Boom.conflict('El tipo de actividad seleccionado está inactivo')
+          }
+          dataToUpdate.activity_type_id = new ObjectId(dataToUpdate.activity_type_id)
+        }
       }
       if (dataToUpdate.depends_on) {
         if (!ObjectId.isValid(dataToUpdate.depends_on)) {

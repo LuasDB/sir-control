@@ -5,6 +5,7 @@ import departmentsRouter from './departments.router.js'
 import projectsRouter from './projects.router.js'
 import clientsRouter from './clients.router.js'
 import activitiesRouter from './activities.router.js'
+import activityTypesRouter from './activityTypes.router.js'
 import notificationsRouter from './notifications.router.js'
 import chatRouter from './chat.router.js'
 import eventsRouter from './events.router.js'
@@ -21,6 +22,7 @@ const AppRouter = (app,io) => {
   router.use('/projects', projectsRouter(io))
   router.use('/clients', clientsRouter(io))
   router.use('/activities', activitiesRouter(io))
+  router.use('/activity-types', activityTypesRouter(io))
   router.use('/notifications', notificationsRouter(io))
   router.use('/events', eventsRouter(io))
   router.use('/reports', reportsRouter(io))

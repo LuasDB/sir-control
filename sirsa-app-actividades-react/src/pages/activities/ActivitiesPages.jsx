@@ -5,7 +5,7 @@ import {
   History, ChevronRight, Upload, Trash2, FileText, Image, File,
   AlertCircle, StickyNote, Plus, Pencil,User
 } from 'lucide-react'
-import { activitiesAPI, usersAPI } from '../../services/api'
+import { activitiesAPI, usersAPI, activityTypesAPI } from '../../services/api'
 import {
   Card, Button, Input, Select, Textarea, StatusBadge, PriorityDot,
   Badge, Avatar, Modal, Spinner, Empty, Progress
@@ -20,9 +20,10 @@ export const ActivitiesPage = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [activities, setActivities] = useState([])
+  const [activityTypes, setActivityTypes] = useState([])
   const [loading, setLoading]       = useState(true)
   const [filters, setFilters]       = useState({
-    search: '', status: '', priority: '',
+    search: '', status: '', priority: '', type: '',
     overdue: new URLSearchParams(location.search).get('overdue') || '',
     mine:''
   })
@@ -33,14 +34,19 @@ export const ActivitiesPage = () => {
       const params = {}
       if (filters.status)   params.status   = filters.status
       if (filters.priority) params.priority  = filters.priority
+      if (filters.type)     params.activity_type_id = filters.type
       if (filters.overdue)  params.overdue   = filters.overdue
       if (filters.mine) params.assignee_id  = user?._id || user?.userId
       const res = await activitiesAPI.getAll(params)
       setActivities(res.data.data)
     } catch { toast.error('Error al cargar actividades') } finally { setLoading(false) }
-  }, [filters.status, filters.priority, filters.overdue, filters.mine, user])
+  }, [filters.status, filters.priority, filters.type, filters.overdue, filters.mine, user])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    activityTypesAPI.getAll({ active: true }).then(r => setActivityTypes(r.data.data)).catch(() => {})
+  }, [])
 
   const filtered = filters.search
     ? activities.filter(a => a.name?.toLowerCase().includes(filters.search.toLowerCase()))
@@ -75,6 +81,13 @@ export const ActivitiesPage = () => {
               <option value="">Toda prioridad</option>
               {Object.entries(PRIORITY_LABELS).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
             </select>
+            {activityTypes.length > 0 && (
+              <select value={filters.type} onChange={e => setFilters(f => ({...f, type: e.target.value}))}
+                className="text-sm border border-silver-border rounded px-2.5 py-1.5 bg-white focus:outline-none focus:border-navy">
+                <option value="">Todo tipo</option>
+                {activityTypes.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+              </select>
+            )}
             <button onClick={() => setFilters(f => ({...f, overdue: f.overdue ? '' : 'true'}))}
               className={cn('text-sm px-3 py-1.5 rounded border transition-colors',
                 filters.overdue
@@ -128,6 +141,9 @@ export const ActivitiesPage = () => {
                         )}
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] font-mono text-charcoal-muted">{a.project?.folio_os}</span>
+                          {a.activity_type?.name && (
+                            <Badge variant="blue" className="text-[10px]">{a.activity_type.name}</Badge>
+                          )}
                           {a.checklist?.length > 0 && (
                             <span className="text-[10px] text-charcoal-muted">
                               {a.checklist.filter(c=>c.completed).length}/{a.checklist.length} subtareas
@@ -339,6 +355,11 @@ export const ActivityDetailPage = () => {
             <Card.Header><Card.Title>Información general</Card.Title></Card.Header>
             <Card.Body className="space-y-3 text-sm">
               <Row label="Proyecto">{activity.project?.folio_os} — {activity.project?.name}</Row>
+              <Row label="Tipo de actividad">
+                {activity.activity_type?.name
+                  ? <Badge variant="blue">{activity.activity_type.name}</Badge>
+                  : '—'}
+              </Row>
               <Row label="Creado por">{activity.created_by_user?.name || '—'}</Row>
               <Row label="Fecha inicio">{formatDate(activity.start_date)}</Row>
               <Row label="Fecha objetivo">{formatDate(activity.target_date)}</Row>
@@ -705,6 +726,7 @@ const Row = ({ label, children }) => (
 // ── Activity Edit Modal (Cambio 1 — solo managers) ────────────────────────────
 const ActivityEditModal = ({ activity, onClose, onSaved }) => {
   const [allUsers, setAllUsers] = useState([])
+  const [activityTypes, setActivityTypes] = useState([])
   const [form, setForm] = useState({
     name       : activity.name || '',
     description: activity.description || '',
@@ -713,11 +735,13 @@ const ActivityEditModal = ({ activity, onClose, onSaved }) => {
     target_date: activity.target_date ? activity.target_date.slice(0,10) : '',
     assignees  : activity.assignees?.map(a => a._id?.toString() || a.toString()) || [],
     depends_on : activity.depends_on_info?._id?.toString() || '',
+    activity_type_id: activity.activity_type_id?.toString() || activity.activity_type?._id?.toString() || '',
   })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     usersAPI.getAll({ active: true }).then(r => setAllUsers(r.data.data)).catch(() => {})
+    activityTypesAPI.getAll({ active: true }).then(r => setActivityTypes(r.data.data)).catch(() => {})
   }, [])
 
   const toggleAssignee = (uid) => {
@@ -751,6 +775,17 @@ const ActivityEditModal = ({ activity, onClose, onSaved }) => {
           onChange={e => setForm(f => ({...f, name: e.target.value}))} required />
         <Textarea label="Descripción" value={form.description}
           onChange={e => setForm(f => ({...f, description: e.target.value}))} />
+        <Select label="Tipo de actividad" value={form.activity_type_id}
+          onChange={e => setForm(f => ({...f, activity_type_id: e.target.value}))}
+          placeholder={activityTypes.length ? 'Sin tipo asignado' : 'No hay tipos dados de alta'}
+          options={(() => {
+            const opts = activityTypes.map(t => ({ value: t._id, label: t.name }))
+            const cur  = form.activity_type_id
+            if (cur && !opts.some(o => o.value === cur) && activity.activity_type) {
+              opts.unshift({ value: cur, label: `${activity.activity_type.name} (inactivo)` })
+            }
+            return opts
+          })()} />
         <div className="grid grid-cols-3 gap-3">
           <Select label="Prioridad" value={form.priority}
             onChange={e => setForm(f => ({...f, priority: e.target.value}))}

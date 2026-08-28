@@ -90,13 +90,14 @@ const activitiesRouter = (io) => {
   router.get('/', authenticate, async (req, res, next) => {
     try {
       const filters = {
-        project_id  : req.query.project_id,
-        phase_id    : req.query.phase_id,
-        status      : req.query.status,
-        priority    : req.query.priority,
-        assignee_id : req.query.assignee_id,
-        search      : req.query.search,
-        overdue     : req.query.overdue
+        project_id      : req.query.project_id,
+        phase_id        : req.query.phase_id,
+        status          : req.query.status,
+        priority        : req.query.priority,
+        assignee_id     : req.query.assignee_id,
+        activity_type_id: req.query.activity_type_id,
+        search          : req.query.search,
+        overdue         : req.query.overdue
       }
       const result = await activities.getAll(filters)
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   HelpCircle, ChevronDown, ChevronRight, RadioTower,
   LayoutDashboard, FolderOpen, ClipboardList, Users, Bell,
-  MessageSquare, CalendarDays, BarChart2, Building2, Settings,BotIcon
+  MessageSquare, CalendarDays, BarChart2, Building2, Settings,BotIcon, Tags
 } from 'lucide-react'
 import { Card } from '../../components/ui'
 import { cn } from '../../lib/utils'
@@ -303,6 +303,26 @@ const SECTIONS = [
           'Crea departamentos y agrégales áreas (Dosimetría, Metrología, TI, etc.).',
           'Asigna usuarios a un departamento para organizar la estructura del equipo.',
           'Desactivar un departamento lo oculta del sistema sin eliminar sus datos históricos.',
+        ]
+      },
+    ]
+  },
+  {
+    icon: Tags,
+    title: 'Tipos de actividad',
+    items: [
+      {
+        label: 'Acceso',
+        text: 'La sección "Tipos de actividad" es visible para Superadmin, Admin TI, Gerente y Coordinador.',
+      },
+      {
+        label: 'Para qué sirve',
+        bullets: [
+          'Es un catálogo que clasifica las actividades: "Trámites", "Seguimiento a correo", "Informe anual", etc.',
+          'Coordinadores y administradores dan de alta, editan y desactivan los tipos.',
+          'Al crear o editar una actividad se elige su tipo desde una lista desplegable (campo opcional).',
+          'Desactivar un tipo lo oculta de la lista de selección sin afectar las actividades que ya lo usan.',
+          'En el listado de Actividades puedes filtrar por tipo.',
         ]
       },
     ]

@@ -5,7 +5,7 @@ import {
   Calendar, MessageSquare, Send, X, UserPlus, UserMinus, Users, Pencil
 } from 'lucide-react'
 import {
-  projectsAPI, chatAPI, activitiesAPI, usersAPI, clientsAPI
+  projectsAPI, chatAPI, activitiesAPI, usersAPI, clientsAPI, activityTypesAPI
 } from '../../services/api'
 import {
   Card, Button, Input, Select, Textarea, StatusBadge, Progress,
@@ -866,15 +866,19 @@ const ProjectMembers = ({ projectId, members, isManager, onRefresh }) => {
 // ── Activity Form Modal (con asignación obligatoria) ──────────────────────────
 const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
   const [allUsers, setAllUsers] = useState([])
+  const [activityTypes, setActivityTypes] = useState([])
   const [form, setForm] = useState({
     name:'', description:'', priority:'media',
-    complexity:'basica', target_date:'', assignees:[]
+    complexity:'basica', target_date:'', assignees:[], activity_type_id:''
   })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     usersAPI.getAll({ active: true })
       .then(r => setAllUsers(r.data.data))
+      .catch(() => {})
+    activityTypesAPI.getAll({ active: true })
+      .then(r => setActivityTypes(r.data.data))
       .catch(() => {})
   }, [])
 
@@ -911,6 +915,11 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
           value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} required />
         <Textarea label="Descripción"
           value={form.description} onChange={e => setForm(f => ({...f, description: e.target.value}))} />
+        <Select label="Tipo de actividad"
+          value={form.activity_type_id}
+          onChange={e => setForm(f => ({...f, activity_type_id: e.target.value}))}
+          placeholder={activityTypes.length ? 'Sin tipo asignado' : 'No hay tipos dados de alta'}
+          options={activityTypes.map(t => ({ value: t._id, label: t.name }))} />
         <div className="grid grid-cols-3 gap-3">
           <Select label="Prioridad" value={form.priority}
             onChange={e => setForm(f => ({...f, priority: e.target.value}))}
