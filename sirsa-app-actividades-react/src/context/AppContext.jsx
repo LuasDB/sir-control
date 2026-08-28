@@ -1,6 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useCallback, useState } from 'react'
 import { authAPI, notificationsAPI } from '../services/api'
 import { io } from 'socket.io-client'
+import { syncPushSubscription } from '../lib/push'
 
 // ─── Auth Context ─────────────────────────────────────────────────────────────
 const AuthContext = createContext(null)
@@ -115,6 +116,12 @@ export const NotificationsProvider = ({ children }) => {
   useEffect(() => {
     fetchUnread()
   }, [fetchUnread])
+
+  // Si el usuario ya autorizó notificaciones, mantener la suscripción push
+  // registrada en el backend (nuevo dispositivo, reinstalación, endpoint rotado)
+  useEffect(() => {
+    if (isAuthenticated) syncPushSubscription()
+  }, [isAuthenticated])
 
   const addNotification = useCallback((notif) => {
     dispatch({ type: 'ADD', payload: notif })

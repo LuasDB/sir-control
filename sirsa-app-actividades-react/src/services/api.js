@@ -111,6 +111,12 @@ export const notificationsAPI = {
   markAllRead   : ()       => api.patch('/notifications/read-all'),
 }
 
+export const pushAPI = {
+  getVapidKey: ()             => api.get('/push/vapid-public-key'),
+  subscribe  : (subscription) => api.post('/push/subscribe', { subscription }),
+  unsubscribe: (endpoint)     => api.post('/push/unsubscribe', { endpoint }),
+}
+
 export const eventsAPI = {
   getAll    : (params)        => api.get('/events', { params }),
   getUpcoming: (days = 3)    => api.get('/events/upcoming', { params: { days } }),

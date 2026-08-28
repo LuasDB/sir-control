@@ -9,5 +9,8 @@ export default {
   serviceEmail:process.env.SERVICE_EMAIL,
   emailSupport:process.env.EMAIL_SUPPORT,
   passSupport:process.env.PASS_SUPPORT,
-  urlApp:process.env.URL_APP
+  urlApp:process.env.URL_APP,
+  vapidPublicKey:process.env.VAPID_PUBLIC_KEY,
+  vapidPrivateKey:process.env.VAPID_PRIVATE_KEY,
+  vapidSubject:process.env.VAPID_SUBJECT || 'mailto:soporte@siradiacion.com.mx'
 }

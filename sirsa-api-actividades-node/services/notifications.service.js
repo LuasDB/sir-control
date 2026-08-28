@@ -1,6 +1,19 @@
 import { ObjectId } from 'mongodb'
 import { db } from '../db/mongoClient.js'
 import Boom from '@hapi/boom'
+import PushService from './push.service.js'
+
+const pushService = new PushService()
+
+/*
+ * Deriva la ruta del frontend a la que debe llevar la notificación
+ * al tocarla en el dispositivo.
+ */
+export const notificationUrl = ({ activity_id, project_id }) => {
+  if (activity_id) return `/activities/${activity_id}`
+  if (project_id)  return `/projects/${project_id}`
+  return '/notifications'
+}
 
 /*
  * Colección: notifications
@@ -80,7 +93,17 @@ class Notifications {
 
       if (!docs.length) return null
 
-      return await db.collection('notifications').insertMany(docs)
+      const result = await db.collection('notifications').insertMany(docs)
+
+      // Web Push a los dispositivos de cada destinatario (fire-and-forget)
+      pushService.sendToUsers(userIds, {
+        title: title,
+        body : body,
+        url  : notificationUrl({ activity_id, project_id }),
+        type : type
+      })
+
+      return result
 
     } catch (error) {
       // Fire-and-forget — no lanzamos Boom para no cortar el flujo principal

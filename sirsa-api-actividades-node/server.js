@@ -8,7 +8,8 @@ import { client } from './db/mongoClient.js'
 import swaggerUi from 'swagger-ui-express'
 import { readFile } from 'fs/promises'
 import config from './config.js'
-import Notifications from './services/notifications.service.js'
+import Notifications, { notificationUrl } from './services/notifications.service.js'
+import PushService from './services/push.service.js'
 
 const data = await readFile('./api_documentation_swaggerUi.json', 'utf-8')
 const swaggerDoc = JSON.parse(data)
@@ -98,6 +99,19 @@ let schedulerInterval = null
 
 const startScheduler = () => {
   const notifService = new Notifications()
+  const pushService  = new PushService()
+
+  const sendPush = (notif) => {
+    pushService.sendToUser(notif.user_id, {
+      title: notif.title,
+      body : notif.body,
+      url  : notificationUrl({
+        activity_id: notif.activity_id?.toString(),
+        project_id : notif.project_id?.toString()
+      }),
+      type : notif.type
+    })
+  }
 
   schedulerInterval = setInterval(async () => {
     try {
@@ -107,6 +121,7 @@ const startScheduler = () => {
         console.log(`🔔 Despachando ${pending.length} notificación(es) programada(s)`)
         pending.forEach(notif => {
           io.to(`user:${notif.user_id}`).emit(`notification:${notif.user_id}`, notif)
+          sendPush(notif)
         })
       }
 
@@ -117,6 +132,7 @@ const startScheduler = () => {
         overdueGroups.forEach(({ notifications: docs }) => {
           docs.forEach(notif => {
             io.to(`user:${notif.user_id}`).emit(`notification:${notif.user_id}`, notif)
+            sendPush(notif)
             // Emitir también alerta global para que el dashboard actualice contadores
             io.emit('activity:overdue', { activity_id: notif.activity_id })
           })
@@ -153,6 +169,13 @@ const startServer = async () => {
       console.log(`🚀 Servidor iniciado en puerto: ${port}`)
       console.log(`📚 Documentación API: http://localhost:${port}/api-docs`)
     })
+
+    // Estado de Web Push
+    if (new PushService().isEnabled()) {
+      console.log('📲 Web Push habilitado (VAPID configurado)')
+    } else {
+      console.warn('📵 Web Push deshabilitado — define VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY (node generate-vapid.js)')
+    }
 
     // Iniciar scheduler después de conectar a la BD
     startScheduler()

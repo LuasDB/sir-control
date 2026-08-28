@@ -5,6 +5,7 @@ import { usersAPI, departmentsAPI, notificationsAPI } from '../../services/api'
 import { Card, Button, Input, Select, Badge, Avatar, Modal, Spinner, Empty, StatusBadge } from '../../components/ui'
 import { ROLE_LABELS, MANAGEMENT_ROLES, cn, formatRelative, formatDate, AREAS } from '../../lib/utils'
 import { useAuth, useNotifications } from '../../context/AppContext'
+import { getPushStatus, enablePush, disablePush, pushSupported } from '../../lib/push'
 import toast from 'react-hot-toast'
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -539,6 +540,93 @@ export const NotificationsPage = () => {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// PUSH NOTIFICATIONS CARD
+// ═══════════════════════════════════════════════════════════════════════════════
+const PushNotificationsCard = () => {
+  const [status, setStatus]   = useState({ supported: true, permission: 'default', subscribed: false })
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy]       = useState(false)
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    setStatus(await getPushStatus())
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { refresh() }, [refresh])
+
+  const handleEnable = async () => {
+    setBusy(true)
+    try {
+      await enablePush()
+      toast.success('Notificaciones activadas en este dispositivo')
+      await refresh()
+    } catch (e) { toast.error(e.message || 'No se pudieron activar') } finally { setBusy(false) }
+  }
+
+  const handleDisable = async () => {
+    setBusy(true)
+    try {
+      await disablePush()
+      toast.success('Notificaciones desactivadas en este dispositivo')
+      await refresh()
+    } catch { toast.error('Error al desactivar') } finally { setBusy(false) }
+  }
+
+  const notSupported = !pushSupported() || status.permission === 'unsupported'
+
+  return (
+    <Card>
+      <Card.Header><Card.Title>Notificaciones en este dispositivo</Card.Title></Card.Header>
+      <Card.Body>
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#F5F5F5] flex items-center justify-center flex-shrink-0">
+            {status.subscribed ? <Bell size={18} className="text-[#2BA84A]" /> : <BellOff size={18} className="text-[#A0A09F]" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            {loading
+              ? <p className="text-sm text-[#A0A09F]">Comprobando…</p>
+              : notSupported
+                ? <p className="text-sm text-[#626261]">
+                    Este navegador no soporta notificaciones push. En iPhone/iPad primero debes
+                    <strong> instalar la app</strong> (Compartir → «Añadir a pantalla de inicio») y abrirla desde ahí.
+                  </p>
+                : status.permission === 'denied'
+                  ? <p className="text-sm text-[#E63946]">
+                      El permiso de notificaciones está bloqueado. Actívalo en los ajustes del navegador
+                      para este sitio y vuelve a intentarlo.
+                    </p>
+                  : status.subscribed
+                    ? <p className="text-sm text-[#626261]">
+                        Estás recibiendo alertas de actividades, vencimientos y mensajes de proyecto
+                        en este dispositivo, aunque la app esté cerrada.
+                      </p>
+                    : <p className="text-sm text-[#626261]">
+                        Activa las alertas para recibir avisos de asignaciones, cambios de estatus,
+                        vencimientos y nuevos mensajes aunque no tengas la app abierta.
+                      </p>
+            }
+
+            {!loading && !notSupported && status.permission !== 'denied' && (
+              <div className="mt-3">
+                {status.subscribed
+                  ? <Button variant="outline" size="sm" loading={busy} onClick={handleDisable}>
+                      Desactivar en este dispositivo
+                    </Button>
+                  : <Button variant="gold" size="sm" loading={busy} icon={<Bell size={13} />} onClick={handleEnable}>
+                      Activar notificaciones
+                    </Button>
+                }
+              </div>
+            )}
+          </div>
+        </div>
+      </Card.Body>
+    </Card>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // ACCOUNT SETTINGS PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 export const AccountSettingsPage = () => {
@@ -654,6 +742,9 @@ export const AccountSettingsPage = () => {
           </div>
         </Card.Body>
       </Card>
+
+      {/* Notificaciones push */}
+      <PushNotificationsCard />
 
       {/* Datos personales */}
       <Card>

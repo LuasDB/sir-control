@@ -343,6 +343,24 @@ const SECTIONS = [
           'Foto de perfil (avatar): sube una imagen desde tu dispositivo. Se muestra en la barra superior, en los listados de actividades y en el chat.',
         ]
       },
+      {
+        label: 'Notificaciones en el celular',
+        steps: [
+          'Instala la app en tu teléfono (Chrome: menú → "Instalar aplicación"; iPhone: Compartir → "Añadir a pantalla de inicio").',
+          'Abre la app instalada e inicia sesión.',
+          'Ve a Mi cuenta → "Notificaciones en este dispositivo" y pulsa "Activar notificaciones".',
+          'Acepta el permiso que pide el navegador.',
+          'Desde ahí recibirás avisos de asignaciones, cambios de estatus, vencimientos y nuevos mensajes aunque la app esté cerrada.',
+        ]
+      },
+      {
+        label: 'Notas sobre notificaciones',
+        bullets: [
+          'El permiso se activa por dispositivo: repite el paso en cada teléfono o computadora.',
+          'En iPhone/iPad solo funcionan si abres la app desde el ícono instalado (no desde Safari).',
+          'Si bloqueaste el permiso, debes reactivarlo en los ajustes del navegador para este sitio.',
+        ]
+      },
     ]
   },
 ]
