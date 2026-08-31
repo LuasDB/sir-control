@@ -76,3 +76,24 @@ export const daysUntil = (date) => {
   if (!date) return null
   return Math.ceil((new Date(date) - new Date()) / 86400000)
 }
+
+// Deriva la ruta interna del elemento al que apunta una notificación.
+// Debe reflejar la lógica de notificationUrl() del backend.
+export const notifTarget = (n) => {
+  if (!n) return null
+  const activityId = n.activity_id?._id || n.activity_id
+  const projectId  = n.project_id?._id  || n.project_id
+  if (n.type === 'project_comment' && projectId) return `/projects/${projectId}?tab=chat`
+  if (activityId) return `/activities/${activityId}`
+  if (projectId)  return `/projects/${projectId}`
+  return null
+}
+
+// Etiqueta corta del destino ("actividad", "proyecto", "chat")
+export const notifTargetLabel = (n) => {
+  if (!n) return null
+  if (n.type === 'project_comment') return 'chat'
+  if (n.activity_id) return 'actividad'
+  if (n.project_id)  return 'proyecto'
+  return null
+}

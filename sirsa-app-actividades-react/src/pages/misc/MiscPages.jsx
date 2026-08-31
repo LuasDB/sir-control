@@ -1,9 +1,10 @@
 // ─── Páginas: Usuarios, Departamentos y Notificaciones ───────────────────────
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Users, Building2, Plus, Pencil, Trash2, Bell, BellOff, ChevronRight, Shield, Camera } from 'lucide-react'
 import { usersAPI, departmentsAPI, notificationsAPI } from '../../services/api'
 import { Card, Button, Input, Select, Badge, Avatar, Modal, Spinner, Empty, StatusBadge } from '../../components/ui'
-import { ROLE_LABELS, MANAGEMENT_ROLES, cn, formatRelative, formatDate, AREAS } from '../../lib/utils'
+import { ROLE_LABELS, MANAGEMENT_ROLES, cn, formatRelative, formatDate, AREAS, notifTarget, notifTargetLabel } from '../../lib/utils'
 import { useAuth, useNotifications } from '../../context/AppContext'
 import { getPushStatus, enablePush, disablePush, pushSupported } from '../../lib/push'
 import toast from 'react-hot-toast'
@@ -446,6 +447,7 @@ import { X } from 'lucide-react'
 // ═══════════════════════════════════════════════════════════════════════════════
 export const NotificationsPage = () => {
   const { resetUnread }             = useNotifications()
+  const navigate                   = useNavigate()
   const [notifications, setNotifs] = useState([])
   const [loading, setLoading]      = useState(true)
   const [page, setPage]            = useState(1)
@@ -480,6 +482,12 @@ export const NotificationsPage = () => {
     } catch {}
   }
 
+  const handleOpen = (n) => {
+    if (!n.read) handleMark(n._id)
+    const target = notifTarget(n)
+    if (target) navigate(target)
+  }
+
   const NOTIF_ICONS = {
     activity_assigned : '📋',
     progress_update   : '📝',
@@ -511,11 +519,14 @@ export const NotificationsPage = () => {
                 description="Aquí aparecerán las alertas de actividades, comentarios y vencimientos" />
             : (
               <div className="divide-y divide-silver-border">
-                {notifications.map(n => (
+                {notifications.map(n => {
+                  const target = notifTarget(n)
+                  return (
                   <div key={n._id}
-                    className={cn('px-4 py-3 flex items-start gap-3 cursor-pointer hover:bg-silver/50 transition-colors',
+                    className={cn('px-4 py-3 flex items-start gap-3 transition-colors',
+                      (target || !n.read) && 'cursor-pointer hover:bg-silver/50',
                       !n.read && 'bg-navy/5')}
-                    onClick={() => !n.read && handleMark(n._id)}>
+                    onClick={() => handleOpen(n)}>
                     <div className="w-8 h-8 rounded-full bg-silver flex items-center justify-center text-base flex-shrink-0">
                       {NOTIF_ICONS[n.type] || '🔔'}
                     </div>
@@ -524,13 +535,20 @@ export const NotificationsPage = () => {
                         {n.title}
                       </p>
                       <p className="text-xs text-charcoal-muted mt-0.5 line-clamp-2">{n.body}</p>
+                      {target && (
+                        <span className="text-[10px] font-medium text-navy mt-1 inline-flex items-center gap-0.5">
+                          Ver {notifTargetLabel(n)}
+                          <ChevronRight size={11} />
+                        </span>
+                      )}
                     </div>
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
                       <span className="text-[10px] text-charcoal-muted">{formatRelative(n.createdAt)}</span>
                       {!n.read && <div className="w-2 h-2 rounded-full bg-gold" />}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )
         }

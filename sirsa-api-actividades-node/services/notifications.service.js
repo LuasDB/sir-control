@@ -9,7 +9,8 @@ const pushService = new PushService()
  * Deriva la ruta del frontend a la que debe llevar la notificación
  * al tocarla en el dispositivo.
  */
-export const notificationUrl = ({ activity_id, project_id }) => {
+export const notificationUrl = ({ activity_id, project_id, type }) => {
+  if (type === 'project_comment' && project_id) return `/projects/${project_id}?tab=chat`
   if (activity_id) return `/activities/${activity_id}`
   if (project_id)  return `/projects/${project_id}`
   return '/notifications'
@@ -99,7 +100,7 @@ class Notifications {
       pushService.sendToUsers(userIds, {
         title: title,
         body : body,
-        url  : notificationUrl({ activity_id, project_id }),
+        url  : notificationUrl({ activity_id, project_id, type }),
         type : type
       })
 

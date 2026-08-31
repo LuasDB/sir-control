@@ -107,7 +107,8 @@ const startScheduler = () => {
       body : notif.body,
       url  : notificationUrl({
         activity_id: notif.activity_id?.toString(),
-        project_id : notif.project_id?.toString()
+        project_id : notif.project_id?.toString(),
+        type       : notif.type
       }),
       type : notif.type
     })

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   Plus, Search, FolderOpen, ChevronRight, Layers, Building2,
   Calendar, MessageSquare, Send, X, UserPlus, UserMinus, Users, Pencil
@@ -179,12 +179,33 @@ export const ProjectDetailPage = () => {
   const navigate  = useNavigate()
   const socket    = useSocket()
   const isManager = MANAGEMENT_ROLES.includes(user?.role)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const VALID_TABS = ['activities', 'chat', 'members']
+  const initialTab = VALID_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'activities'
 
   const [project, setProject]       = useState(null)
   const [dashboard, setDash]        = useState(null)
   const [activities, setActs]       = useState([])
   const [loading, setLoading]       = useState(true)
-  const [tab, setTab]               = useState('activities')
+  const [tab, setTabState]          = useState(initialTab)
+
+  // Mantener la pestaña sincronizada con la URL (deep-link desde notificaciones)
+  const setTab = useCallback((t) => {
+    setTabState(t)
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (t === 'activities') next.delete('tab')
+      else next.set('tab', t)
+      return next
+    }, { replace: true })
+  }, [setSearchParams])
+
+  useEffect(() => {
+    const urlTab = searchParams.get('tab')
+    if (VALID_TABS.includes(urlTab) && urlTab !== tab) setTabState(urlTab)
+    else if (!urlTab && tab !== 'activities') setTabState('activities')
+  }, [searchParams])  // eslint-disable-line react-hooks/exhaustive-deps
   const [showCloseConfirm, setCloseConfirm] = useState(false)
   const [showEditProject, setEditProject]   = useState(false) // Cambio 1
 

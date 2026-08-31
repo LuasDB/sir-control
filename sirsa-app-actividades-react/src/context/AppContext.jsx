@@ -1,7 +1,10 @@
 import { createContext, useContext, useReducer, useEffect, useCallback, useState } from 'react'
 import { authAPI, notificationsAPI } from '../services/api'
 import { io } from 'socket.io-client'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { syncPushSubscription } from '../lib/push'
+import { notifTarget } from '../lib/utils'
 
 // ─── Auth Context ─────────────────────────────────────────────────────────────
 const AuthContext = createContext(null)
@@ -150,6 +153,7 @@ const SocketContext = createContext(null)
 export const SocketProvider = ({ children }) => {
   const { isAuthenticated, user }  = useAuth()
   const { addNotification }        = useNotifications()
+  const navigate                   = useNavigate()
   const [socket, setSocket]        = useReducer((_, s) => s, null)
 
   useEffect(() => {
@@ -168,6 +172,28 @@ export const SocketProvider = ({ children }) => {
     const userId = user._id || user.userId
     s.on(`notification:${userId}`, (notif) => {
       addNotification(notif)
+
+      // Toast interactivo — al tocarlo lleva al elemento relacionado
+      const target = notifTarget(notif)
+      toast(
+        (t) => (
+          <div
+            onClick={() => { toast.dismiss(t.id); if (target) navigate(target) }}
+            style={{ cursor: target ? 'pointer' : 'default', maxWidth: 280 }}
+          >
+            <p style={{ fontWeight: 600, fontSize: 13 }}>{notif.title}</p>
+            {notif.body && (
+              <p style={{ fontSize: 12, color: '#626261', marginTop: 2 }}>{notif.body}</p>
+            )}
+            {target && (
+              <p style={{ fontSize: 11, color: '#1F3A5F', fontWeight: 600, marginTop: 4 }}>
+                Toca para ver →
+              </p>
+            )}
+          </div>
+        ),
+        { icon: '🔔', duration: 6000 }
+      )
     })
 
     s.on('disconnect', () => console.log('❌ Socket desconectado'))
