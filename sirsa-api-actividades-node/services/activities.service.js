@@ -678,42 +678,76 @@ class Activities {
   }
 
   /*
-   * Edita la fecha de cierre de una actividad ya cerrada y recalcula days_taken.
-   * Solo roles de gestión (gerente, coordinador, admin, superadmin), ya que
-   * las actividades no siempre se cierran en tiempo y forma dentro del sistema.
+   * Registra o corrige la fecha de inicio y/o la fecha de cierre de una actividad.
+   * Solo roles de gestión (gerente, coordinador, admin, superadmin), ya que las
+   * actividades no siempre se abren o cierran en tiempo y forma dentro del sistema.
+   * Si la actividad está cerrada, recalcula days_taken.
    */
-  async updateClosedDate(id, closedAt, user) {
+  async updateDates(id, { start_date, closed_at } = {}, user) {
     try {
       if (!ObjectId.isValid(id)) {
         throw Boom.badRequest(`El ID "${id}" no es un ID válido`)
       }
 
       if (!CLOSING_ROLES.includes(user.role)) {
-        throw Boom.forbidden('Solo gerentes y coordinadores pueden editar la fecha de cierre')
+        throw Boom.forbidden('Solo gerentes y coordinadores pueden modificar las fechas de la actividad')
+      }
+
+      if (start_date === undefined && closed_at === undefined) {
+        throw Boom.badData('No se enviaron fechas para actualizar')
       }
 
       const activity = await db.collection('activities').findOne({ _id: new ObjectId(id) })
       if (!activity) throw Boom.notFound('La actividad no fue encontrada')
 
-      if (activity.status !== 'cerrado') {
-        throw Boom.conflict('Solo se puede editar la fecha de cierre de actividades cerradas')
+      const setObj = { updatedAt: new Date() }
+      const detail = {}
+
+      // ── Fecha de inicio ──
+      let effectiveStart = activity.start_date ? new Date(activity.start_date) : null
+      if (start_date !== undefined) {
+        const parsedStart = start_date ? new Date(start_date) : null
+        if (!parsedStart || isNaN(parsedStart.getTime())) {
+          throw Boom.badData('La fecha de inicio no es válida')
+        }
+        if (parsedStart.getTime() > Date.now()) {
+          throw Boom.badData('La fecha de inicio no puede ser futura')
+        }
+        setObj.start_date       = parsedStart
+        effectiveStart          = parsedStart
+        detail.prev_start_date  = activity.start_date || null
+        detail.new_start_date   = parsedStart
       }
 
-      const parsed = closedAt ? new Date(closedAt) : null
-      if (!parsed || isNaN(parsed.getTime())) {
-        throw Boom.badData('La fecha de cierre no es válida')
+      // ── Fecha de cierre ──
+      let effectiveClosed = activity.closed_at ? new Date(activity.closed_at) : null
+      if (closed_at !== undefined) {
+        if (activity.status !== 'cerrado') {
+          throw Boom.conflict('Solo se puede fijar la fecha de cierre de actividades cerradas')
+        }
+        const parsedClosed = closed_at ? new Date(closed_at) : null
+        if (!parsedClosed || isNaN(parsedClosed.getTime())) {
+          throw Boom.badData('La fecha de cierre no es válida')
+        }
+        if (parsedClosed.getTime() > Date.now()) {
+          throw Boom.badData('La fecha de cierre no puede ser futura')
+        }
+        setObj.closed_at        = parsedClosed
+        effectiveClosed         = parsedClosed
+        detail.prev_closed_at   = activity.closed_at || null
+        detail.new_closed_at    = parsedClosed
       }
-      if (parsed.getTime() > Date.now()) {
-        throw Boom.badData('La fecha de cierre no puede ser futura')
-      }
-      if (activity.start_date && parsed < new Date(activity.start_date)) {
+
+      // ── Validación cruzada ──
+      if (effectiveStart && effectiveClosed && effectiveClosed < effectiveStart) {
         throw Boom.badData('La fecha de cierre no puede ser anterior a la fecha de inicio')
       }
 
-      const setObj = { closed_at: parsed, updatedAt: new Date() }
-      if (activity.start_date) {
-        const diff = parsed - new Date(activity.start_date)
+      // ── Recalcular días tomados si la actividad está cerrada ──
+      if (activity.status === 'cerrado' && effectiveStart && effectiveClosed) {
+        const diff = effectiveClosed - effectiveStart
         setObj.days_taken = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+        detail.days_taken = setObj.days_taken
       }
 
       const updateOne = await db.collection('activities').updateOne(
@@ -725,17 +759,18 @@ class Activities {
         throw Boom.notFound(`No se encontró la actividad con ID ${id}`)
       }
 
-      this._log(id, activity.project_id, user._id || user.userId, 'closed_date_updated', {
-        prev_closed_at: activity.closed_at || null,
-        new_closed_at : parsed,
-        days_taken    : setObj.days_taken ?? null
-      })
+      this._log(id, activity.project_id, user._id || user.userId, 'dates_updated', detail)
 
-      return { updateOne, closed_at: parsed, days_taken: setObj.days_taken ?? null }
+      return {
+        updateOne,
+        start_date: setObj.start_date ?? activity.start_date ?? null,
+        closed_at : setObj.closed_at  ?? activity.closed_at  ?? null,
+        days_taken: setObj.days_taken ?? activity.days_taken ?? null
+      }
 
     } catch (error) {
       if (Boom.isBoom(error)) throw error
-      throw Boom.badImplementation('No se pudo actualizar la fecha de cierre', error)
+      throw Boom.badImplementation('No se pudieron actualizar las fechas de la actividad', error)
     }
   }
 

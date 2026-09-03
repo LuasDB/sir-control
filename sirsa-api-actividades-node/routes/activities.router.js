@@ -22,7 +22,7 @@ const notifService = new Notifications()
  * POST /activities                              → ingeniero, gerente, coordinador, admin, superadmin
  * PATCH /activities/:id                         → asignados + managers
  * PATCH /activities/:id/status                  → asignados (→ en_proceso, en_revision) + managers (todo)
- * PATCH /activities/:id/closed-date             → solo managers (gerente/coordinador/admin/superadmin)
+ * PATCH /activities/:id/dates                    → solo managers (gerente/coordinador/admin/superadmin)
  * POST /activities/:id/notes                    → asignados + managers
  *
  * POST   /activities/:id/checklist              → asignados + managers
@@ -331,32 +331,37 @@ const activitiesRouter = (io) => {
     }
   })
 
-  // ─── Fecha de cierre ────────────────────────────────────────────────────────
+  // ─── Fechas de la actividad (inicio / cierre) ───────────────────────────────
 
   /*
-   * PATCH /activities/:id/closed-date
-   * Body: { closed_at: Date }
+   * PATCH /activities/:id/dates
+   * Body: { start_date?: Date, closed_at?: Date }
    *
    * Solo gerentes/coordinadores/admin/superadmin. Permite registrar o corregir
-   * la fecha real en que se cerró una actividad ya cerrada y recalcula days_taken.
+   * la fecha de inicio y/o la fecha real de cierre de la actividad. Si está
+   * cerrada, recalcula days_taken.
    */
-  router.patch('/:id/closed-date', authenticate, authorize(...MANAGEMENT_ROLES), async (req, res, next) => {
+  router.patch('/:id/dates', authenticate, authorize(...MANAGEMENT_ROLES), async (req, res, next) => {
     try {
-      const { closed_at } = req.body
+      const { start_date, closed_at } = req.body
 
-      const result = await activities.updateClosedDate(req.params.id, closed_at, req.user)
+      const result = await activities.updateDates(
+        req.params.id,
+        { start_date, closed_at },
+        req.user
+      )
 
       if (io) {
         io.emit('activity:updated', {
           id       : req.params.id,
           updatedBy: req.user._id || req.user.userId,
-          fields   : ['closed_at']
+          fields   : Object.keys(req.body)
         })
       }
 
       res.status(200).json({
         success: true,
-        message: 'Fecha de cierre actualizada',
+        message: 'Fechas actualizadas',
         data: result
       })
     } catch (error) {

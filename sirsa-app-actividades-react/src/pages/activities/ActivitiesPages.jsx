@@ -190,7 +190,7 @@ export const ActivityDetailPage = () => {
   const [statusModal, setStatusModal]   = useState(false)
   const [noteModal, setNoteModal]       = useState(false)
   const [editModal, setEditModal]       = useState(false)  // Cambio 1
-  const [closedDateModal, setClosedDateModal] = useState(false)
+  const [datesModal, setDatesModal]     = useState(false)
 
   const isAssigned = activity?.assignees
     ?.map(a => a.toString()).includes(userId?.toString())
@@ -329,12 +329,13 @@ export const ActivityDetailPage = () => {
                   </Button>
                 </div>
               )}
-              {/* Coordinadores y gerentes pueden corregir la fecha de cierre
-                  de una actividad ya cerrada (no siempre se cierra en tiempo y forma) */}
-              {canClose && activity.status === 'cerrado' && (
+              {/* Coordinadores y gerentes pueden corregir las fechas de inicio/cierre
+                  de actividades cerradas o canceladas (para las abiertas se usa "Editar").
+                  Las actividades no siempre se abren o cierran en tiempo y forma. */}
+              {canClose && ['cerrado','cancelado'].includes(activity.status) && (
                 <Button variant="outline" size="sm" icon={<Pencil size={13} />}
-                  onClick={() => setClosedDateModal(true)}>
-                  Editar fecha de cierre
+                  onClick={() => setDatesModal(true)}>
+                  Editar fechas
                 </Button>
               )}
             </div>
@@ -451,26 +452,35 @@ export const ActivityDetailPage = () => {
       {editModal && (
         <ActivityEditModal activity={activity} onClose={() => setEditModal(false)} onSaved={load} />
       )}
-      {closedDateModal && (
-        <ClosedDateModal activity={activity}
-          onClose={() => setClosedDateModal(false)} onSaved={load} />
+      {datesModal && (
+        <ActivityDatesModal activity={activity}
+          onClose={() => setDatesModal(false)} onSaved={load} />
       )}
     </div>
   )
 }
 
-// ── Closed Date Modal (solo coordinadores/gerentes) ───────────────────────────
-const ClosedDateModal = ({ activity, onClose, onSaved }) => {
-  const [closedAt, setClosedAt] = useState(toDateInput(activity.closed_at))
-  const [saving, setSaving]     = useState(false)
+// ── Activity Dates Modal (solo coordinadores/gerentes) ────────────────────────
+// Permite registrar/corregir la fecha de inicio y, si está cerrada, la de cierre.
+const ActivityDatesModal = ({ activity, onClose, onSaved }) => {
+  const isClosed = activity.status === 'cerrado'
+  const [startDate, setStartDate] = useState(toDateInput(activity.start_date))
+  const [closedAt, setClosedAt]   = useState(toDateInput(activity.closed_at))
+  const [saving, setSaving]       = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!closedAt) { toast.error('Selecciona la fecha de cierre'); return }
+    if (!startDate) { toast.error('Selecciona la fecha de inicio'); return }
+    if (isClosed && !closedAt) { toast.error('Selecciona la fecha de cierre'); return }
+    if (isClosed && closedAt < startDate) {
+      toast.error('La fecha de cierre no puede ser anterior a la de inicio'); return
+    }
     setSaving(true)
     try {
-      await activitiesAPI.updateClosedDate(activity._id, dateInputToISO(closedAt))
-      toast.success('Fecha de cierre actualizada')
+      const payload = { start_date: dateInputToISO(startDate) }
+      if (isClosed) payload.closed_at = dateInputToISO(closedAt)
+      await activitiesAPI.updateDates(activity._id, payload)
+      toast.success('Fechas actualizadas')
       onSaved(); onClose()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Error')
@@ -478,17 +488,22 @@ const ClosedDateModal = ({ activity, onClose, onSaved }) => {
   }
 
   return (
-    <Modal open title="Editar fecha de cierre" onClose={onClose}
+    <Modal open title="Editar fechas de la actividad" onClose={onClose}
       footer={<>
         <Button variant="outline" onClick={onClose}>Cancelar</Button>
         <Button variant="primary" loading={saving} onClick={handleSubmit}>Guardar</Button>
       </>}>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Input label="Fecha de cierre *" type="date" value={closedAt}
-          min={activity.start_date ? toDateInput(activity.start_date) : undefined}
+        <Input label="Fecha de inicio *" type="date" value={startDate}
           max={toDateInput()}
-          onChange={e => setClosedAt(e.target.value)}
-          hint="Fecha real en que se cerró la actividad. Se recalcularán los días tomados." />
+          onChange={e => setStartDate(e.target.value)} />
+        {isClosed && (
+          <Input label="Fecha de cierre *" type="date" value={closedAt}
+            min={startDate || undefined}
+            max={toDateInput()}
+            onChange={e => setClosedAt(e.target.value)}
+            hint="Fecha real en que se cerró la actividad. Se recalcularán los días tomados." />
+        )}
       </form>
     </Modal>
   )
@@ -774,6 +789,7 @@ const LOG_LABELS = {
   updated         : 'Actualizó',
   status_change   : 'Cambió estatus',
   closed_date_updated: 'Editó la fecha de cierre',
+  dates_updated   : 'Editó las fechas',
   progress_update : 'Registró avance',
   checklist_update: 'Actualizó checklist',
   attachment_added: 'Adjuntó archivo',
@@ -796,6 +812,7 @@ const ActivityEditModal = ({ activity, onClose, onSaved }) => {
     description: activity.description || '',
     priority   : activity.priority || 'media',
     complexity : activity.complexity || 'basica',
+    start_date : activity.start_date ? activity.start_date.slice(0,10) : '',
     target_date: activity.target_date ? activity.target_date.slice(0,10) : '',
     assignees  : activity.assignees?.map(a => a._id?.toString() || a.toString()) || [],
     depends_on : activity.depends_on_info?._id?.toString() || '',
@@ -850,7 +867,7 @@ const ActivityEditModal = ({ activity, onClose, onSaved }) => {
             }
             return opts
           })()} />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Select label="Prioridad" value={form.priority}
             onChange={e => setForm(f => ({...f, priority: e.target.value}))}
             options={Object.entries(PRIORITY_LABELS).map(([v,l]) => ({value:v,label:l}))} />
@@ -859,6 +876,8 @@ const ActivityEditModal = ({ activity, onClose, onSaved }) => {
             options={Object.entries(COMPLEXITY_LEVELS).map(([v,m]) => ({
               value:v, label:`${m.label} (×${m.weight})`
             }))} />
+          <Input label="Fecha de inicio" type="date" value={form.start_date}
+            onChange={e => setForm(f => ({...f, start_date: e.target.value}))} />
           <Input label="Fecha objetivo" type="date" value={form.target_date}
             onChange={e => setForm(f => ({...f, target_date: e.target.value}))} />
         </div>
