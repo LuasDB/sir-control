@@ -22,6 +22,7 @@ const notifService = new Notifications()
  * POST /activities                              → ingeniero, gerente, coordinador, admin, superadmin
  * PATCH /activities/:id                         → asignados + managers
  * PATCH /activities/:id/status                  → asignados (→ en_proceso, en_revision) + managers (todo)
+ * PATCH /activities/:id/closed-date             → solo managers (gerente/coordinador/admin/superadmin)
  * POST /activities/:id/notes                    → asignados + managers
  *
  * POST   /activities/:id/checklist              → asignados + managers
@@ -247,13 +248,14 @@ const activitiesRouter = (io) => {
    */
   router.patch('/:id/status', authenticate, async (req, res, next) => {
     try {
-      const { status, note } = req.body
+      const { status, note, closed_at } = req.body
 
       const result = await activities.updateStatus(
         req.params.id,
         status,
         req.user,
-        note
+        note,
+        closed_at
       )
 
       if (io) {
@@ -322,6 +324,39 @@ const activitiesRouter = (io) => {
       res.status(200).json({
         success: true,
         message: `Estatus actualizado a "${status}"`,
+        data: result
+      })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  // ─── Fecha de cierre ────────────────────────────────────────────────────────
+
+  /*
+   * PATCH /activities/:id/closed-date
+   * Body: { closed_at: Date }
+   *
+   * Solo gerentes/coordinadores/admin/superadmin. Permite registrar o corregir
+   * la fecha real en que se cerró una actividad ya cerrada y recalcula days_taken.
+   */
+  router.patch('/:id/closed-date', authenticate, authorize(...MANAGEMENT_ROLES), async (req, res, next) => {
+    try {
+      const { closed_at } = req.body
+
+      const result = await activities.updateClosedDate(req.params.id, closed_at, req.user)
+
+      if (io) {
+        io.emit('activity:updated', {
+          id       : req.params.id,
+          updatedBy: req.user._id || req.user.userId,
+          fields   : ['closed_at']
+        })
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Fecha de cierre actualizada',
         data: result
       })
     } catch (error) {

@@ -574,7 +574,7 @@ class Activities {
    * - Solo gerente/coordinador/admin/superadmin pueden cerrar o cancelar.
    * - Al cerrar: se registra closed_at, days_taken y se recalcula el progreso del proyecto.
    */
-  async updateStatus(id, newStatus, user, note = '') {
+  async updateStatus(id, newStatus, user, note = '', closedAt = null) {
     try {
       if (!ObjectId.isValid(id)) {
         throw Boom.badRequest(`El ID "${id}" no es un ID válido`)
@@ -618,12 +618,28 @@ class Activities {
         updatedAt : new Date()
       }
 
-      // Al cerrar: calcular días reales de ejecución
+      // Al cerrar: calcular días reales de ejecución.
+      // Los roles de gestión pueden indicar manualmente la fecha real de cierre
+      // (las actividades no siempre se cierran en el sistema el mismo día que terminan).
       if (newStatus === 'cerrado') {
-        setObj.closed_at = new Date()
+        let closeDate = new Date()
+        if (closedAt) {
+          const parsed = new Date(closedAt)
+          if (isNaN(parsed.getTime())) {
+            throw Boom.badData('La fecha de cierre no es válida')
+          }
+          if (parsed.getTime() > Date.now()) {
+            throw Boom.badData('La fecha de cierre no puede ser futura')
+          }
+          if (activity.start_date && parsed < new Date(activity.start_date)) {
+            throw Boom.badData('La fecha de cierre no puede ser anterior a la fecha de inicio')
+          }
+          closeDate = parsed
+        }
+        setObj.closed_at = closeDate
         if (activity.start_date) {
-          const diff = setObj.closed_at - new Date(activity.start_date)
-          setObj.days_taken = Math.ceil(diff / (1000 * 60 * 60 * 24))
+          const diff = closeDate - new Date(activity.start_date)
+          setObj.days_taken = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
         }
       }
 
@@ -658,6 +674,68 @@ class Activities {
     } catch (error) {
       if (Boom.isBoom(error)) throw error
       throw Boom.badImplementation('No se pudo actualizar el estatus de la actividad', error)
+    }
+  }
+
+  /*
+   * Edita la fecha de cierre de una actividad ya cerrada y recalcula days_taken.
+   * Solo roles de gestión (gerente, coordinador, admin, superadmin), ya que
+   * las actividades no siempre se cierran en tiempo y forma dentro del sistema.
+   */
+  async updateClosedDate(id, closedAt, user) {
+    try {
+      if (!ObjectId.isValid(id)) {
+        throw Boom.badRequest(`El ID "${id}" no es un ID válido`)
+      }
+
+      if (!CLOSING_ROLES.includes(user.role)) {
+        throw Boom.forbidden('Solo gerentes y coordinadores pueden editar la fecha de cierre')
+      }
+
+      const activity = await db.collection('activities').findOne({ _id: new ObjectId(id) })
+      if (!activity) throw Boom.notFound('La actividad no fue encontrada')
+
+      if (activity.status !== 'cerrado') {
+        throw Boom.conflict('Solo se puede editar la fecha de cierre de actividades cerradas')
+      }
+
+      const parsed = closedAt ? new Date(closedAt) : null
+      if (!parsed || isNaN(parsed.getTime())) {
+        throw Boom.badData('La fecha de cierre no es válida')
+      }
+      if (parsed.getTime() > Date.now()) {
+        throw Boom.badData('La fecha de cierre no puede ser futura')
+      }
+      if (activity.start_date && parsed < new Date(activity.start_date)) {
+        throw Boom.badData('La fecha de cierre no puede ser anterior a la fecha de inicio')
+      }
+
+      const setObj = { closed_at: parsed, updatedAt: new Date() }
+      if (activity.start_date) {
+        const diff = parsed - new Date(activity.start_date)
+        setObj.days_taken = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+      }
+
+      const updateOne = await db.collection('activities').updateOne(
+        { _id: new ObjectId(id) },
+        { $set: setObj }
+      )
+
+      if (updateOne.matchedCount === 0) {
+        throw Boom.notFound(`No se encontró la actividad con ID ${id}`)
+      }
+
+      this._log(id, activity.project_id, user._id || user.userId, 'closed_date_updated', {
+        prev_closed_at: activity.closed_at || null,
+        new_closed_at : parsed,
+        days_taken    : setObj.days_taken ?? null
+      })
+
+      return { updateOne, closed_at: parsed, days_taken: setObj.days_taken ?? null }
+
+    } catch (error) {
+      if (Boom.isBoom(error)) throw error
+      throw Boom.badImplementation('No se pudo actualizar la fecha de cierre', error)
     }
   }
 

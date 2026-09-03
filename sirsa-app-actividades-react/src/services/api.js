@@ -80,6 +80,7 @@ export const activitiesAPI = {
   create          : (data)           => api.post('/activities', data),
   update          : (id, d)          => api.patch(`/activities/${id}`, d),
   updateStatus    : (id, d)          => api.patch(`/activities/${id}/status`, d),
+  updateClosedDate: (id, closed_at)  => api.patch(`/activities/${id}/closed-date`, { closed_at }),
   addNote         : (id, note)       => api.post(`/activities/${id}/notes`, { note }),
   getLogs         : (id, params)     => api.get(`/activities/${id}/logs`, { params }),
   addChecklistItem: (id, d)          => api.post(`/activities/${id}/checklist`, d),

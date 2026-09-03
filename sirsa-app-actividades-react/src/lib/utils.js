@@ -77,6 +77,23 @@ export const daysUntil = (date) => {
   return Math.ceil((new Date(date) - new Date()) / 86400000)
 }
 
+// Convierte una fecha (o hoy) al formato YYYY-MM-DD que espera <input type="date">,
+// usando la zona horaria local para evitar corrimientos de un día.
+export const toDateInput = (date) => {
+  const dt = date ? new Date(date) : new Date()
+  if (isNaN(dt.getTime())) return ''
+  const off = dt.getTimezoneOffset() * 60000
+  return new Date(dt.getTime() - off).toISOString().slice(0, 10)
+}
+
+// Convierte el valor YYYY-MM-DD de un <input type="date"> a ISO fijando el mediodía
+// local, de modo que la fecha guardada no "retroceda" un día por la zona horaria.
+export const dateInputToISO = (value) => {
+  if (!value) return null
+  const dt = new Date(`${value}T12:00:00`)
+  return isNaN(dt.getTime()) ? null : dt.toISOString()
+}
+
 // Deriva la ruta interna del elemento al que apunta una notificación.
 // Debe reflejar la lógica de notificationUrl() del backend.
 export const notifTarget = (n) => {

@@ -11,7 +11,7 @@ import {
   Badge, Avatar, Modal, Spinner, Empty, Progress
 } from '../../components/ui'
 import { formatDate, daysUntil, MANAGEMENT_ROLES, STATUS_LABELS, PRIORITY_LABELS,
-         COMPLEXITY_LEVELS, cn } from '../../lib/utils'
+         COMPLEXITY_LEVELS, cn, toDateInput, dateInputToISO } from '../../lib/utils'
 import { useAuth, useSocket } from '../../context/AppContext'
 import toast from 'react-hot-toast'
 
@@ -190,6 +190,7 @@ export const ActivityDetailPage = () => {
   const [statusModal, setStatusModal]   = useState(false)
   const [noteModal, setNoteModal]       = useState(false)
   const [editModal, setEditModal]       = useState(false)  // Cambio 1
+  const [closedDateModal, setClosedDateModal] = useState(false)
 
   const isAssigned = activity?.assignees
     ?.map(a => a.toString()).includes(userId?.toString())
@@ -328,6 +329,14 @@ export const ActivityDetailPage = () => {
                   </Button>
                 </div>
               )}
+              {/* Coordinadores y gerentes pueden corregir la fecha de cierre
+                  de una actividad ya cerrada (no siempre se cierra en tiempo y forma) */}
+              {canClose && activity.status === 'cerrado' && (
+                <Button variant="outline" size="sm" icon={<Pencil size={13} />}
+                  onClick={() => setClosedDateModal(true)}>
+                  Editar fecha de cierre
+                </Button>
+              )}
             </div>
           </div>
         </Card.Body>
@@ -442,7 +451,46 @@ export const ActivityDetailPage = () => {
       {editModal && (
         <ActivityEditModal activity={activity} onClose={() => setEditModal(false)} onSaved={load} />
       )}
+      {closedDateModal && (
+        <ClosedDateModal activity={activity}
+          onClose={() => setClosedDateModal(false)} onSaved={load} />
+      )}
     </div>
+  )
+}
+
+// ── Closed Date Modal (solo coordinadores/gerentes) ───────────────────────────
+const ClosedDateModal = ({ activity, onClose, onSaved }) => {
+  const [closedAt, setClosedAt] = useState(toDateInput(activity.closed_at))
+  const [saving, setSaving]     = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!closedAt) { toast.error('Selecciona la fecha de cierre'); return }
+    setSaving(true)
+    try {
+      await activitiesAPI.updateClosedDate(activity._id, dateInputToISO(closedAt))
+      toast.success('Fecha de cierre actualizada')
+      onSaved(); onClose()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error')
+    } finally { setSaving(false) }
+  }
+
+  return (
+    <Modal open title="Editar fecha de cierre" onClose={onClose}
+      footer={<>
+        <Button variant="outline" onClick={onClose}>Cancelar</Button>
+        <Button variant="primary" loading={saving} onClick={handleSubmit}>Guardar</Button>
+      </>}>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Input label="Fecha de cierre *" type="date" value={closedAt}
+          min={activity.start_date ? toDateInput(activity.start_date) : undefined}
+          max={toDateInput()}
+          onChange={e => setClosedAt(e.target.value)}
+          hint="Fecha real en que se cerró la actividad. Se recalcularán los días tomados." />
+      </form>
+    </Modal>
   )
 }
 
@@ -633,6 +681,7 @@ const AttachmentsTab = ({ activityId, attachments = [], canEdit, onRefresh }) =>
 const StatusChangeModal = ({ activity, user, isManager, canClose, onClose, onSaved }) => {
   const [status, setStatus] = useState(activity.status)
   const [note, setNote]     = useState('')
+  const [closedAt, setClosedAt] = useState(toDateInput())
   const [saving, setSaving] = useState(false)
 
   // Cambio 1: filtrar estatus disponibles según el rol
@@ -642,11 +691,19 @@ const StatusChangeModal = ({ activity, user, isManager, canClose, onClose, onSav
     return true
   })
 
+  const isClosing = status === 'cerrado'
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isClosing && canClose && !closedAt) {
+      toast.error('Selecciona la fecha de cierre')
+      return
+    }
     setSaving(true)
     try {
-      await activitiesAPI.updateStatus(activity._id, { status, note })
+      const payload = { status, note }
+      if (isClosing && canClose) payload.closed_at = dateInputToISO(closedAt)
+      await activitiesAPI.updateStatus(activity._id, payload)
       toast.success(`Estatus actualizado a "${STATUS_LABELS[status]}"`)
       onSaved(); onClose()
     } catch (e) { toast.error(e.response?.data?.message || 'Error') } finally { setSaving(false) }
@@ -662,6 +719,12 @@ const StatusChangeModal = ({ activity, user, isManager, canClose, onClose, onSav
         <Select label="Nuevo estatus" value={status}
           onChange={e => setStatus(e.target.value)}
           options={options.map(([v,l]) => ({value:v, label:l}))} />
+        {isClosing && canClose && (
+          <Input label="Fecha de cierre *" type="date" value={closedAt}
+            max={toDateInput()}
+            onChange={e => setClosedAt(e.target.value)}
+            hint="Selecciona la fecha real en que se cerró la actividad." />
+        )}
         {!canClose && (
           <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded border border-amber-200">
             Solo gerentes y coordinadores pueden cerrar o cancelar actividades.
@@ -710,6 +773,7 @@ const LOG_LABELS = {
   created         : 'Creó la actividad',
   updated         : 'Actualizó',
   status_change   : 'Cambió estatus',
+  closed_date_updated: 'Editó la fecha de cierre',
   progress_update : 'Registró avance',
   checklist_update: 'Actualizó checklist',
   attachment_added: 'Adjuntó archivo',
