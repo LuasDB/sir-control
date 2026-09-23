@@ -886,11 +886,13 @@ const ProjectMembers = ({ projectId, members, isManager, onRefresh }) => {
 
 // ── Activity Form Modal (con asignación obligatoria) ──────────────────────────
 const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
+  const { user } = useAuth()
+  const isManager = MANAGEMENT_ROLES.includes(user?.role)
   const [allUsers, setAllUsers] = useState([])
   const [activityTypes, setActivityTypes] = useState([])
   const [form, setForm] = useState({
     name:'', description:'', priority:'media',
-    complexity:'basica', target_date:'', assignees:[], activity_type_id:''
+    complexity:'basica', start_date:'', target_date:'', assignees:[], activity_type_id:''
   })
   const [saving, setSaving] = useState(false)
 
@@ -941,7 +943,7 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
           onChange={e => setForm(f => ({...f, activity_type_id: e.target.value}))}
           placeholder={activityTypes.length ? 'Sin tipo asignado' : 'No hay tipos dados de alta'}
           options={activityTypes.map(t => ({ value: t._id, label: t.name }))} />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Select label="Prioridad" value={form.priority}
             onChange={e => setForm(f => ({...f, priority: e.target.value}))}
             options={[
@@ -956,6 +958,13 @@ const ActivityFormModal = ({ projectId, onClose, onSaved }) => {
               value: v,
               label: `${m.label} (x${m.weight})`
             }))} />
+          {/* Solo gerentes/coordinadores pueden fijar manualmente la fecha de inicio;
+              si se deja vacío, el backend usa la fecha actual. */}
+          {isManager && (
+            <Input label="Fecha de inicio" type="date" value={form.start_date}
+              onChange={e => setForm(f => ({...f, start_date: e.target.value}))}
+              hint="Si se deja vacío, se usa la fecha actual." />
+          )}
           <Input label="Fecha objetivo" type="date" value={form.target_date}
             onChange={e => setForm(f => ({...f, target_date: e.target.value}))} />
         </div>
