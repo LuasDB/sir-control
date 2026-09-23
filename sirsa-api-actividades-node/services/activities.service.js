@@ -620,16 +620,14 @@ class Activities {
 
       // Al cerrar: calcular días reales de ejecución.
       // Los roles de gestión pueden indicar manualmente la fecha real de cierre
-      // (las actividades no siempre se cierran en el sistema el mismo día que terminan).
+      // (las actividades no siempre se cierran en el sistema el mismo día que terminan,
+      // y pueden requerir registrar una fecha posterior a la actual).
       if (newStatus === 'cerrado') {
         let closeDate = new Date()
         if (closedAt) {
           const parsed = new Date(closedAt)
           if (isNaN(parsed.getTime())) {
             throw Boom.badData('La fecha de cierre no es válida')
-          }
-          if (parsed.getTime() > Date.now()) {
-            throw Boom.badData('La fecha de cierre no puede ser futura')
           }
           if (activity.start_date && parsed < new Date(activity.start_date)) {
             throw Boom.badData('La fecha de cierre no puede ser anterior a la fecha de inicio')
@@ -710,9 +708,6 @@ class Activities {
         if (!parsedStart || isNaN(parsedStart.getTime())) {
           throw Boom.badData('La fecha de inicio no es válida')
         }
-        if (parsedStart.getTime() > Date.now()) {
-          throw Boom.badData('La fecha de inicio no puede ser futura')
-        }
         setObj.start_date       = parsedStart
         effectiveStart          = parsedStart
         detail.prev_start_date  = activity.start_date || null
@@ -728,9 +723,6 @@ class Activities {
         const parsedClosed = closed_at ? new Date(closed_at) : null
         if (!parsedClosed || isNaN(parsedClosed.getTime())) {
           throw Boom.badData('La fecha de cierre no es válida')
-        }
-        if (parsedClosed.getTime() > Date.now()) {
-          throw Boom.badData('La fecha de cierre no puede ser futura')
         }
         setObj.closed_at        = parsedClosed
         effectiveClosed         = parsedClosed

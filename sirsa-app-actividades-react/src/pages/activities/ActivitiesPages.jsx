@@ -495,12 +495,10 @@ const ActivityDatesModal = ({ activity, onClose, onSaved }) => {
       </>}>
       <form onSubmit={handleSubmit} className="space-y-3">
         <Input label="Fecha de inicio *" type="date" value={startDate}
-          max={toDateInput()}
           onChange={e => setStartDate(e.target.value)} />
         {isClosed && (
           <Input label="Fecha de cierre *" type="date" value={closedAt}
             min={startDate || undefined}
-            max={toDateInput()}
             onChange={e => setClosedAt(e.target.value)}
             hint="Fecha real en que se cerró la actividad. Se recalcularán los días tomados." />
         )}
@@ -736,7 +734,6 @@ const StatusChangeModal = ({ activity, user, isManager, canClose, onClose, onSav
           options={options.map(([v,l]) => ({value:v, label:l}))} />
         {isClosing && canClose && (
           <Input label="Fecha de cierre *" type="date" value={closedAt}
-            max={toDateInput()}
             onChange={e => setClosedAt(e.target.value)}
             hint="Selecciona la fecha real en que se cerró la actividad." />
         )}
